@@ -9,7 +9,7 @@ use arrow::array::{
 };
 use arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::NaiveDate;
 use serde_json::{json, Map, Number, Value};
 
 mod scanner;
@@ -338,7 +338,7 @@ fn lance_scan_jsonb(
     let scanner = LanceScanner::new(table_path)
         .unwrap_or_else(|_| pgrx::error!("Failed to open Lance table at: {}", table_path));
 
-    let mut scan_iter = scanner
+    let scan_iter = scanner
         .scan_with_filter(None, limit)
         .unwrap_or_else(|_| pgrx::error!("Failed to create scan iterator"));
 

@@ -130,74 +130,11 @@ impl LanceScanner {
 /// Lance scan iterator
 pub struct LanceScanIterator {
     pub batches: Vec<RecordBatch>,
-    current_batch: usize,
-    current_row: usize,
 }
 
 impl LanceScanIterator {
     fn new(batches: Vec<RecordBatch>) -> Self {
-        Self {
-            batches,
-            current_batch: 0,
-            current_row: 0,
-        }
-    }
-
-    /// Get next row data
-    pub fn next_row(&mut self) -> Option<Result<LanceRow, pgrx::PgSqlErrorCode>> {
-        loop {
-            if self.current_batch >= self.batches.len() {
-                return None;
-            }
-
-            let batch = &self.batches[self.current_batch];
-
-            if self.current_row >= batch.num_rows() {
-                self.current_batch += 1;
-                self.current_row = 0;
-                continue;
-            }
-
-            let row = LanceRow {
-                batch,
-                row_index: self.current_row,
-            };
-
-            self.current_row += 1;
-            return Some(Ok(row));
-        }
-    }
-}
-
-/// Lance row data reference
-pub struct LanceRow<'a> {
-    batch: &'a RecordBatch,
-    row_index: usize,
-}
-
-impl<'a> LanceRow<'a> {
-    /// Get value of specified column
-    pub fn get_column_value(
-        &self,
-        column_index: usize,
-    ) -> Result<Option<pgrx::pg_sys::Datum>, pgrx::PgSqlErrorCode> {
-        if column_index >= self.batch.num_columns() {
-            return Err(pgrx::PgSqlErrorCode::ERRCODE_INVALID_COLUMN_REFERENCE);
-        }
-
-        let column = self.batch.column(column_index);
-        crate::types::arrow_value_to_datum(column.as_ref(), self.row_index)
-    }
-
-    /// Get all column values
-    pub fn get_all_values(&self) -> Result<Vec<Option<pgrx::pg_sys::Datum>>, pgrx::PgSqlErrorCode> {
-        let mut values = Vec::with_capacity(self.batch.num_columns());
-
-        for i in 0..self.batch.num_columns() {
-            values.push(self.get_column_value(i)?);
-        }
-
-        Ok(values)
+        Self { batches }
     }
 }
 
@@ -214,13 +151,4 @@ impl LanceTableStats {
     pub fn num_columns(&self) -> usize {
         self.schema.fields().len()
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_lance_scanner_creation() {}
 }

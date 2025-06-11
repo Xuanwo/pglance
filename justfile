@@ -10,8 +10,8 @@ default:
 # Run all quality checks
 check pg=pg_version:
     cargo fmt --all -- --check
-    cargo clippy --features pg{{pg}} -- -D warnings
-    cargo test --features pg{{pg}}
+    cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
+    cargo test --no-default-features --features pg{{pg}}
     cd integration_tests && uv run ruff format --check .
     cd integration_tests && uv run ruff check .
 
@@ -23,15 +23,15 @@ fmt:
 
 # Run Rust tests
 test pg=pg_version:
-    cargo test --features pg{{pg}}
+    cargo test --no-default-features --features pg{{pg}}
 
 # Build extension
 build pg=pg_version:
-    cargo pgrx package --features pg{{pg}}
+    cargo pgrx package --no-default-features --features pg{{pg}}
 
 # Build release version
 build-release pg=pg_version:
-    cargo pgrx package --features pg{{pg}} --release
+    cargo pgrx package --no-default-features --features pg{{pg}} --release
 
 # Install extension locally
 install pg=pg_version: (build pg)
@@ -43,7 +43,7 @@ e2e:
 
 # Run clippy
 clippy pg=pg_version:
-    cargo clippy --features pg{{pg}} -- -D warnings
+    cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
 
 # Setup development environment
 setup:
@@ -59,7 +59,7 @@ clean:
 
 # Start PostgreSQL with extension
 run pg=pg_version: (install pg)
-    cargo pgrx run --features pg{{pg}}
+    cargo pgrx run --no-default-features --features pg{{pg}}
 
 # Security audit
 audit:
@@ -80,8 +80,8 @@ fix:
 ci pg=pg_version:
     @echo "🦀 Rust checks..."
     cargo fmt --all -- --check
-    cargo clippy --features pg{{pg}} -- -D warnings
-    cargo test --features pg{{pg}}
+    cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
+    cargo test --no-default-features --features pg{{pg}}
     @echo "🐍 Python checks..."
     cd integration_tests && uv run ruff format --check .
     cd integration_tests && uv run ruff check .
