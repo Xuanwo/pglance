@@ -1,13 +1,9 @@
 #!/bin/bash
 
-# pglance build and test script
-# This script builds the pglance extension and runs basic tests
-
-set -e  # Exit on error
+set -e
 
 echo "🚀 Starting to build pglance extension..."
 
-# Check if necessary tools are installed
 check_dependencies() {
     echo "📋 Checking dependencies..."
     
@@ -29,40 +25,32 @@ check_dependencies() {
     echo "✅ Dependencies check passed"
 }
 
-# Build extension
 build_extension() {
     echo "🔨 Building extension..."
     
-    # Clean previous builds
     cargo clean
     
-    # Check code
     echo "📝 Checking code..."
     cargo check
     
-    # Generate SQL schema
     echo "📄 Generating SQL schema..."
     cargo pgrx schema
     
     echo "✅ Build completed"
 }
 
-# Run tests
 run_tests() {
     echo "🧪 Running tests..."
     
-    # Run Rust unit tests
     echo "🦀 Running Rust unit tests..."
     cargo test
     
-    # Run pgrx integration tests
     echo "🐘 Running PostgreSQL integration tests..."
     cargo pgrx test pg13
     
     echo "✅ Tests completed"
 }
 
-# Install extension (optional)
 install_extension() {
     if [[ "${1:-}" == "--install" ]]; then
         echo "📦 Installing extension to local PostgreSQL..."
@@ -74,7 +62,6 @@ install_extension() {
     fi
 }
 
-# Display usage instructions
 show_usage() {
     echo ""
     echo "📚 Usage Instructions:"
@@ -94,13 +81,10 @@ show_usage() {
     echo ""
 }
 
-# Create demo Lance table function (if needed)
 create_demo_data() {
     if [[ "${1:-}" == "--demo" ]]; then
         echo "🎭 Creating demo data..."
         
-        # Here you can add code to create demo Lance tables
-        # Currently just a placeholder
         echo "💡 To create demo data, you need:"
         echo "   1. Install Lance Python package: pip install pylance"
         echo "   2. Create a simple Lance table"
@@ -110,7 +94,6 @@ create_demo_data() {
 import pyarrow as pa
 import lance
 
-# Create sample data
 table = pa.table({
     "id": [1, 2, 3, 4, 5],
     "name": ["Alice", "Bob", "Charlie", "David", "Eve"],
@@ -118,7 +101,6 @@ table = pa.table({
     "score": [85.5, 92.0, 78.5, 88.0, 95.5]
 })
 
-# Write to Lance format
 lance.write_dataset(table, "/tmp/demo_table.lance")
 print("Demo table created at /tmp/demo_table.lance")
 EOF
@@ -127,7 +109,6 @@ EOF
     fi
 }
 
-# Main function
 main() {
     echo "=========================================="
     echo "🔧 pglance PostgreSQL Lance Extension Builder"
@@ -145,5 +126,4 @@ main() {
     echo "=========================================="
 }
 
-# Run main function, passing all arguments
 main "$@"

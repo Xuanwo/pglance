@@ -26,49 +26,39 @@ pub fn arrow_to_pg_type(arrow_type: &DataType) -> Result<pgrx::PgOid, pgrx::PgSq
         DataType::Timestamp(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TIMESTAMPOID)),
         DataType::Interval(_) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::INTERVALOID)),
         DataType::List(_) => {
-            // For List types, we simplify to JSON type first
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
         }
         DataType::LargeList(_) => {
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
         }
         DataType::FixedSizeList(field, _) => {
-            // For fixed-size lists (usually vectors), convert to arrays or JSON
             match field.data_type() {
                 DataType::Float32 => {
-                    // Float vectors, use float4 array
                     Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::FLOAT4ARRAYOID))
                 }
                 DataType::Float64 => {
-                    // Double precision vectors, use float8 array
                     Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::FLOAT8ARRAYOID))
                 }
                 _ => {
-                    // Other types convert to JSON
                     Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
                 }
             }
         }
         DataType::Struct(_) => {
-            // Struct types convert to JSON
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
         }
         DataType::Union(_, _) => {
-            // Union types convert to JSON
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
         }
         DataType::Dictionary(_, value_type) => {
-            // Dictionary types, use value type
             arrow_to_pg_type(value_type)
         }
         DataType::Decimal128(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::NUMERICOID)),
         DataType::Decimal256(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::NUMERICOID)),
         DataType::Map(_, _) => {
-            // Map types convert to JSON
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
         }
         _ => {
-            // Unsupported types convert to TEXT
             pgrx::warning!("Unsupported Arrow type: {:?}, converting to TEXT", arrow_type);
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TEXTOID))
         }

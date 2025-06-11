@@ -98,14 +98,13 @@ class LanceTableGenerator:
             ]
         }
 
-        # Convert metadata to JSON strings for better compatibility
         data["metadata"] = [json.dumps(meta) for meta in data["metadata"]]
 
         table = pa.table(data)
         lance.write_dataset(table, table_path, mode="overwrite")
 
         print(f"✅ Created vector table at: {table_path}")
-        return table_name # Return relative name
+        return table_name
 
     def create_complex_table(self) -> str:
         """Create a table with complex nested data types"""
@@ -137,14 +136,13 @@ class LanceTableGenerator:
             ]
         }
 
-        # Convert complex objects to JSON strings
         data["profile"] = [json.dumps(profile) for profile in data["profile"]]
 
         table = pa.table(data)
         lance.write_dataset(table, table_path, mode="overwrite")
 
         print(f"✅ Created complex table at: {table_path}")
-        return table_name # Return relative name
+        return table_name
 
     def create_large_table(self) -> str:
         """Create a larger table for performance testing"""
@@ -191,10 +189,8 @@ class PglanceTest:
         """Install and test pglance extension"""
         with self.conn.cursor() as cur:
             try:
-                # Create extension if not exists
                 cur.execute("CREATE EXTENSION IF NOT EXISTS pglance;")
 
-                # Test basic functionality
                 cur.execute("SELECT hello_pglance();")
                 result = cur.fetchone()[0]
                 assert result == "Hello, pglance", f"Unexpected result: {result}"
@@ -472,8 +468,6 @@ def main():
         exit_code = 1
 
     finally:
-        # No automatic cleanup of the fixed host_data_dir by default.
-        # User can manually remove it or add a specific cleanup flag if desired.
         pass
     
     sys.exit(exit_code)

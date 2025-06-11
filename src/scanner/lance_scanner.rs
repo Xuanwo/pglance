@@ -27,13 +27,12 @@ impl LanceScanner {
         Ok(Self {
             dataset,
             runtime,
-            batch_size: 1024, // 默认批大小
+            batch_size: 1024,
         })
     }
 
     /// Get table schema
     pub fn schema(&self) -> Arc<arrow::datatypes::Schema> {
-        // Convert Lance Schema to Arrow Schema
         let lance_schema = self.dataset.schema();
         let arrow_fields: Vec<Arc<arrow::datatypes::Field>> = lance_schema
             .fields
@@ -59,31 +58,25 @@ impl LanceScanner {
         let dataset = self.dataset.clone();
         let batch_size = self.batch_size;
 
-        // Create scan in async runtime
         let batches = runtime.block_on(async move {
             let mut scan = dataset.scan();
 
-            // Set batch size
             scan.batch_size(batch_size);
 
-            // Apply filter conditions
             if let Some(filter_expr) = filter {
                 scan.filter(&filter_expr)
                     .map_err(|_e| pgrx::PgSqlErrorCode::ERRCODE_SYNTAX_ERROR)?;
             }
 
-            // Apply limit
             if let Some(limit_val) = limit {
                 let _ = scan.limit(Some(limit_val), None);
             }
 
-            // Execute scan
             let stream = scan
                 .try_into_stream()
                 .await
                 .map_err(|_e| pgrx::PgSqlErrorCode::ERRCODE_INTERNAL_ERROR)?;
 
-            // Collect all batches
             let mut batches = Vec::new();
             use futures::StreamExt;
 
@@ -119,7 +112,6 @@ impl LanceScanner {
             .collect();
         let schema = Arc::new(arrow::datatypes::Schema::new(arrow_fields));
 
-        // Get row count (this is an approximate value from metadata)
         let num_rows = self.runtime.block_on(async {
             dataset
                 .count_rows(None)
@@ -154,21 +146,18 @@ impl LanceScanIterator {
     /// Get next row data
     pub fn next_row(&mut self) -> Option<Result<LanceRow, pgrx::PgSqlErrorCode>> {
         loop {
-            // Check if there are more batches
             if self.current_batch >= self.batches.len() {
                 return None;
             }
 
             let batch = &self.batches[self.current_batch];
 
-            // Check if current batch has more rows
             if self.current_row >= batch.num_rows() {
                 self.current_batch += 1;
                 self.current_row = 0;
                 continue;
             }
 
-            // Create current row data
             let row = LanceRow {
                 batch,
                 row_index: self.current_row,
@@ -234,7 +223,5 @@ mod tests {
 
     #[test]
     fn test_lance_scanner_creation() {
-        // This test requires an actual Lance dataset
-        // In practice, you need to create a test dataset
     }
 }

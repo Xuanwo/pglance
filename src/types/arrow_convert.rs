@@ -2,7 +2,6 @@ use arrow::array::*;
 use arrow::datatypes::*;
 use pgrx::prelude::*;
 
-/// Convert values from Arrow Array to PostgreSQL Datum
 pub fn arrow_value_to_datum(array: &dyn arrow::array::Array, row_idx: usize) -> Result<Option<pgrx::pg_sys::Datum>, pgrx::PgSqlErrorCode> {
     if array.is_null(row_idx) {
         return Ok(None);
@@ -45,7 +44,6 @@ pub fn arrow_value_to_datum(array: &dyn arrow::array::Array, row_idx: usize) -> 
             value.into_datum()
         }
         _ => {
-            // For other types, convert to string representation
             let string_value = format!("{:?}", array.data_type());
             string_value.into_datum()
         }
@@ -55,7 +53,6 @@ pub fn arrow_value_to_datum(array: &dyn arrow::array::Array, row_idx: usize) -> 
         .map(Some)
 }
 
-/// Get PostgreSQL column information corresponding to Arrow Schema
 pub fn arrow_schema_to_pg_columns(schema: &Schema) -> Vec<(String, pgrx::PgOid, bool)> {
     schema.fields().iter().map(|field| {
         let name = field.name().clone();

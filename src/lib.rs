@@ -1,6 +1,5 @@
 use pgrx::prelude::*;
 
-// Arrow specific imports for data conversion
 use arrow::array::{
     Array, BooleanArray, Date32Array, Date64Array, FixedSizeListArray, Float16Array,
     Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
@@ -9,14 +8,8 @@ use arrow::array::{
     BinaryArray, LargeBinaryArray, FixedSizeBinaryArray, GenericListArray,
 };
 use arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
-
-// Base64 for encoding binary data
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-
-// Chrono for date/time formatting
 use chrono::{NaiveDate, NaiveDateTime};
-
-// Serde JSON for building JSON objects
 use serde_json::{json, Map, Number, Value};
 
 mod scanner;
@@ -29,7 +22,6 @@ pgrx::pg_module_magic!();
 
 // extension_sql_file!("./sql/bootstrap.sql", bootstrap);
 
-// Helper function to convert Arrow array/row value to serde_json::Value
 fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
     if array.is_null(row_idx) {
         return Value::Null;
@@ -59,14 +51,14 @@ fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
         }
         DataType::Utf8 => Value::String(array.as_any().downcast_ref::<StringArray>().unwrap().value(row_idx).to_string()),
         DataType::LargeUtf8 => Value::String(array.as_any().downcast_ref::<LargeStringArray>().unwrap().value(row_idx).to_string()),
-        DataType::Date32 => { // Days since UNIX epoch
+        DataType::Date32 => {
             let days = array.as_any().downcast_ref::<Date32Array>().unwrap().value(row_idx);
             NaiveDate::from_ymd_opt(1970, 1, 1)
                 .and_then(|d| d.checked_add_signed(chrono::Duration::days(days as i64)))
                 .map(|d| Value::String(d.to_string()))
                 .unwrap_or(Value::Null)
         }
-        DataType::Date64 => { // Milliseconds since UNIX epoch
+        DataType::Date64 => {
             let millis = array.as_any().downcast_ref::<Date64Array>().unwrap().value(row_idx);
             chrono::DateTime::from_timestamp_millis(millis)
                 .map(|dt| Value::String(dt.naive_utc().date().to_string()))
@@ -137,7 +129,7 @@ fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
         DataType::Binary => Value::String(STANDARD.encode(array.as_any().downcast_ref::<BinaryArray>().unwrap().value(row_idx))),
         DataType::LargeBinary => Value::String(STANDARD.encode(array.as_any().downcast_ref::<LargeBinaryArray>().unwrap().value(row_idx))),
         DataType::FixedSizeBinary(_) => Value::String(STANDARD.encode(array.as_any().downcast_ref::<FixedSizeBinaryArray>().unwrap().value(row_idx))),
-        // TODO: Add more types as needed (Dictionary, Interval, Duration, Decimal, etc.)
+
         _ => Value::String(format!("<unsupported_type: {:?}>", array.data_type())),
     }
 }
@@ -214,33 +206,26 @@ fn lance_scan_jsonb(
     let scanner = LanceScanner::new(table_path)
         .unwrap_or_else(|_| pgrx::error!("Failed to open Lance table at: {}", table_path));
 
-    // Pass the original limit (Option<i64>) from the function arguments to the scanner.
-    // The scanner internally handles how to apply this limit.
     let mut scan_iter = scanner
         .scan_with_filter(None, limit) 
         .unwrap_or_else(|_| pgrx::error!("Failed to create scan iterator"));
 
-    let schema = scanner.schema(); // This is Arc<arrow::datatypes::Schema>
+    let schema = scanner.schema();
 
     let mut results = Vec::new();
     let mut rows_outputted_count = 0i64;
 
-    // Loop through RecordBatches provided by the LanceScanIterator
-    'batch_loop: for record_batch in scan_iter.batches { // Iterate over the Vec<RecordBatch>
-        // Iterate over rows within the current RecordBatch
+    'batch_loop: for record_batch in scan_iter.batches {
         for row_idx_in_batch in 0..record_batch.num_rows() {
-            // Enforce the overall limit on rows returned by this PostgreSQL function
-            if let Some(l_pg) = limit { // This is the original Option<i64> limit from PG function args
+            if let Some(l_pg) = limit {
                 if rows_outputted_count >= l_pg {
-                    break 'batch_loop; // Reached PostgreSQL function's row limit
+                    break 'batch_loop;
                 }
             }
 
             let mut json_map = Map::new();
-            // Iterate over columns/fields for the current row
             for (col_idx, field) in schema.fields().iter().enumerate() {
                 let column_array = record_batch.column(col_idx);
-                // Convert the Arrow value at [row_idx_in_batch, col_idx] to a serde_json::Value
                 let value = arrow_value_to_serde_json(column_array.as_ref(), row_idx_in_batch);
                 json_map.insert(field.name().clone(), value);
             }
@@ -273,7 +258,6 @@ pub mod pg_test {
 
     #[must_use]
     pub fn postgresql_conf_options() -> Vec<&'static str> {
-        // return any postgresql.conf settings that are required for your tests
         vec![]
     }
 }
