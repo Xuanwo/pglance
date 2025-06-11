@@ -15,10 +15,6 @@ jobs:
     name: End-to-End Tests
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        pg-version: [16]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,25 +35,42 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target/
-          key: ${{ runner.os }}-cargo-e2e-pg${{ matrix.pg-version }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-e2e-pg16-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-e2e-pg${{ matrix.pg-version }}-
+            ${{ runner.os }}-cargo-e2e-pg16-
             ${{ runner.os }}-cargo-e2e-
 
-      - name: Install PostgreSQL ${{ matrix.pg-version }}
+      - name: Cache cargo-pgrx installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/cargo-pgrx
+          key: ${{ runner.os }}-cargo-pgrx-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-cargo-pgrx-
+
+      - name: Cache PostgreSQL installations
+        uses: actions/cache@v3
+        with:
+          path: ~/.pgrx
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
-          echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+          sudo apt-get install -y protobuf-compiler
 
-      - name: Install pgrx
+      - name: Install and initialize pgrx
         run: |
-          cargo install cargo-pgrx --version=0.14.3 --locked
-          cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+          if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+            cargo install cargo-pgrx --version=0.14.3 --locked
+          fi
+          cargo pgrx init --pg16
 
-      - name: Build extension for PostgreSQL ${{ matrix.pg-version }}
+      - name: Build extension for PostgreSQL 16
         run: |
-          cargo pgrx package --no-default-features --features pg${{ matrix.pg-version }}
+          cargo pgrx package --no-default-features --features pg16
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -77,13 +90,13 @@ jobs:
           chmod +x run_tests.sh
           ./run_tests.sh
         env:
-          PG_VERSION: ${{ matrix.pg-version }}
+          PG_VERSION: 16
 
       - name: Upload test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-pg${{ matrix.pg-version }}
+          name: test-logs-pg16
           path: |
             integration_tests/testdata/
             integration_tests/docker/logs/
@@ -104,16 +117,17 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Install PostgreSQL 16
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-16 postgresql-server-dev-16 protobuf-compiler
-          echo "/usr/lib/postgresql/16/bin" >> $GITHUB_PATH
+          sudo apt-get install -y protobuf-compiler
 
-      - name: Install pgrx
+      - name: Install and initialize pgrx
         run: |
-          cargo install cargo-pgrx --version=0.14.3 --locked
-          cargo pgrx init --pg16 /usr/lib/postgresql/16/bin/pg_config
+          if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+            cargo install cargo-pgrx --version=0.14.3 --locked
+          fi
+          cargo pgrx init --pg16
 
       - name: Quick smoke test
         run: |

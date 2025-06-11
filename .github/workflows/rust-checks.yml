@@ -33,11 +33,6 @@ jobs:
     name: Rust Clippy
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        # We only test pg16 for now, but may extend for other versions.
-        pg-version: [16]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -56,33 +51,45 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target/
-          key: ${{ runner.os }}-cargo-clippy-pg${{ matrix.pg-version }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-clippy-pg16-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-clippy-pg${{ matrix.pg-version }}-
+            ${{ runner.os }}-cargo-clippy-pg16-
             ${{ runner.os }}-cargo-clippy-
 
-      - name: Install PostgreSQL ${{ matrix.pg-version }}
+      - name: Cache cargo-pgrx installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/cargo-pgrx
+          key: ${{ runner.os }}-cargo-pgrx-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-cargo-pgrx-
+
+      - name: Cache PostgreSQL installations
+        uses: actions/cache@v3
+        with:
+          path: ~/.pgrx
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
-          echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+          sudo apt-get install -y protobuf-compiler
 
-      - name: Install pgrx
+      - name: Install and initialize pgrx
         run: |
-          cargo install cargo-pgrx --version=0.14.3 --locked
-          cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+          if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+            cargo install cargo-pgrx --version=0.14.3 --locked
+          fi
+          cargo pgrx init --pg16
 
       - name: Run Clippy
-        run: cargo clippy --all-targets --features pg${{ matrix.pg-version }} -- -D warnings
+        run: cargo clippy --all-targets --features pg16 -- -D warnings
 
   rust-tests:
     name: Rust Tests
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        # We only test pg16 for now, but may extend for other versions.
-        pg-version: [16]
 
     steps:
       - name: Checkout code
@@ -101,24 +108,41 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target/
-          key: ${{ runner.os }}-cargo-test-pg${{ matrix.pg-version }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-test-pg16-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-test-pg${{ matrix.pg-version }}-
+            ${{ runner.os }}-cargo-test-pg16-
             ${{ runner.os }}-cargo-test-
 
-      - name: Install PostgreSQL ${{ matrix.pg-version }}
+      - name: Cache cargo-pgrx installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/cargo-pgrx
+          key: ${{ runner.os }}-cargo-pgrx-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-cargo-pgrx-
+
+      - name: Cache PostgreSQL installations
+        uses: actions/cache@v3
+        with:
+          path: ~/.pgrx
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
-          echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+          sudo apt-get install -y protobuf-compiler
 
-      - name: Install pgrx
+      - name: Install and initialize pgrx
         run: |
-          cargo install cargo-pgrx --version=0.14.3 --locked
-          cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+          if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+            cargo install cargo-pgrx --version=0.14.3 --locked
+          fi
+          cargo pgrx init --pg16
 
       - name: Run Rust tests
-        run: cargo test --features pg${{ matrix.pg-version }}
+        run: cargo test --features pg16
 
       - name: Build extension
-        run: cargo pgrx package --features pg${{ matrix.pg-version }}
+        run: cargo pgrx package --features pg16

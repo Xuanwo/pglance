@@ -41,16 +41,33 @@ jobs:
           ${{ runner.os }}-cargo-release-pg${{ matrix.pg-version }}-
           ${{ runner.os }}-cargo-release-
 
-    - name: Install PostgreSQL ${{ matrix.pg-version }}
+    - name: Cache cargo-pgrx installation
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/bin/cargo-pgrx
+        key: ${{ runner.os }}-cargo-pgrx-0.14.3
+        restore-keys: |
+          ${{ runner.os }}-cargo-pgrx-
+
+    - name: Cache PostgreSQL installations
+      uses: actions/cache@v3
+      with:
+        path: ~/.pgrx
+        key: ${{ runner.os }}-pgrx-pg${{ matrix.pg-version }}-0.14.3
+        restore-keys: |
+          ${{ runner.os }}-pgrx-pg${{ matrix.pg-version }}-
+
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
-        echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+        sudo apt-get install -y protobuf-compiler
 
-    - name: Install pgrx
+    - name: Install and initialize pgrx
       run: |
-        cargo install cargo-pgrx --version=0.14.3 --locked
-        cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+        if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+          cargo install cargo-pgrx --version=0.14.3 --locked
+        fi
+        cargo pgrx init --pg${{ matrix.pg-version }}
 
     - name: Build release package
       run: |
@@ -118,9 +135,19 @@ jobs:
         toolchain: stable
         override: true
 
+    - name: Cache cargo tools
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/bin/cargo-outdated
+        key: ${{ runner.os }}-cargo-outdated
+        restore-keys: |
+          ${{ runner.os }}-cargo-outdated
+
     - name: Check for outdated Rust dependencies
       run: |
-        cargo install cargo-outdated
+        if [ ! -f ~/.cargo/bin/cargo-outdated ]; then
+          cargo install cargo-outdated
+        fi
         cargo outdated --exit-code 1 || echo "::warning::Some Rust dependencies are outdated"
 
     - name: Install uv
