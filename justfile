@@ -12,8 +12,6 @@ check pg=pg_version:
     cargo fmt --all -- --check
     cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
     cargo test --no-default-features --features pg{{pg}}
-    cd integration_tests && uv run ruff format --check .
-    cd integration_tests && uv run ruff check .
 
 # Auto-format all code
 fmt:
@@ -35,8 +33,6 @@ build-release pg=pg_version:
 install pg=pg_version: (build pg)
     cargo pgrx install --features pg{{pg}}
 
-
-
 # Run clippy linter
 clippy pg=pg_version:
     cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
@@ -44,14 +40,11 @@ clippy pg=pg_version:
 # Setup development environment
 setup:
     cargo install cargo-pgrx --version=0.14.3 --locked
-    cargo pgrx init --pg{{pg_version}}
-    cd integration_tests && uv sync
+    cargo pgrx init
 
 # Clean build artifacts
 clean:
     cargo clean
-    find . -name "*.pyc" -delete
-    find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Start PostgreSQL with extension
 run pg=pg_version: (install pg)
