@@ -13,15 +13,11 @@ The integration tests validate the complete workflow of:
 
 ### Prerequisites
 
-1. **pglance extension must be built and installed**:
-   ```bash
-   cd ..
-   ./build_and_test.sh --install
-   ```
+1. **Docker and Docker Compose** installed and running
 
-2. **PostgreSQL server must be running** and accessible via `psql`
+2. **Python 3.8+** with uv package manager available
 
-3. **Python 3.8+** with pip or uv available
+3. **Sufficient disk space** (~2-3 GB for Docker images)
 
 ### Running Integration Tests
 
@@ -30,15 +26,23 @@ The integration tests validate the complete workflow of:
 ```
 
 This will:
+- Build PostgreSQL + pglance Docker container
+- Start isolated test database
 - Set up Python virtual environment
 - Install test dependencies
 - Run integration tests
-- Clean up test data
+- Clean up test data and containers
 
 ### Test Options
 
 ```bash
-# Clean up test data only
+# Start test database only
+./run_tests.sh --start-db
+
+# Stop test database only
+./run_tests.sh --stop-db
+
+# Clean up test environment and exit
 ./run_tests.sh --cleanup
 ```
 
@@ -65,12 +69,26 @@ Comprehensive Python-based integration tests that:
 
 **Usage**:
 ```bash
+# With Docker (recommended)
+./run_tests.sh
+
+# Manual execution (requires running PostgreSQL with pglance)
 python integration_test.py [--cleanup] [--host-data-dir ./testdata]
 ```
 
 ### Test Data Directory (`testdata/`)
 
-Directory where test Lance tables are created and stored during test execution. This directory is automatically cleaned up after tests complete (when using `--cleanup` flag).
+Directory where test Lance tables are created and stored during test execution. This directory is mounted into the Docker container at `/test_data_in_container` and is automatically cleaned up after tests complete (when using `--cleanup` flag).
+
+### Docker Environment (`docker/`)
+
+Contains Docker configuration for the integration test environment:
+- `Dockerfile` - PostgreSQL 16 + pglance extension image
+- `docker-compose.yml` - Service orchestration
+- `init-pglance.sh` - Database initialization script
+- `README.md` - Docker-specific documentation
+
+The Docker setup provides an isolated PostgreSQL instance with pglance pre-installed, eliminating the need for local PostgreSQL installation.
 
 ## Configuration
 
@@ -83,32 +101,45 @@ The `pyproject.toml` file defines the Python test environment:
 name = "pglance-tests"
 dependencies = [
     "pylance",
-    "pyarrow", 
+    "pyarrow",
     "psycopg2-binary",
 ]
 ```
 
 ### Database Configuration
 
-Integration tests support various database connection parameters:
+#### Docker Environment (Default)
+The Docker setup automatically configures:
+- Host: `localhost`
+- Port: `5432`
+- Database: `postgres`
+- User: `postgres`
+- Password: `postgres`
+
+#### Manual Configuration
+For custom PostgreSQL instances:
 
 ```bash
 python integration_test.py \
-  --db-host localhost \
+  --db-host your-host \
   --db-port 5432 \
-  --db-name postgres \
-  --db-user postgres \
-  --db-password postgres
+  --db-name your-db \
+  --db-user your-user \
+  --db-password your-password
 ```
 
 ### Container Testing
 
-For Docker/container environments, specify different paths for host and container:
+The Docker environment automatically handles path mapping:
+- Host path: `./testdata`
+- Container path: `/test_data_in_container`
+
+For custom container setups:
 
 ```bash
 python integration_test.py \
   --host-data-dir ./testdata \
-  --pglance-data-prefix /test_data_in_container
+  --pglance-data-prefix /your-container-path
 ```
 
 ## Development
@@ -129,17 +160,21 @@ python integration_test.py \
 
 ### Common Issues
 
-1. **Extension not found**: Ensure pglance is built and installed (`../build_and_test.sh --install`)
-2. **PostgreSQL connection failed**: Check that PostgreSQL is running and accessible
-3. **Python dependencies missing**: Run the test script which will set up the virtual environment
-4. **Permission denied**: Ensure test script is executable (`chmod +x run_tests.sh`)
+1. **Docker not running**: Ensure Docker daemon is started (`docker info`)
+2. **Container build fails**: Check Docker logs and ensure sufficient disk space
+3. **PostgreSQL connection failed**: Verify container is healthy (`docker-compose ps`)
+4. **Python dependencies missing**: Run `./run_tests.sh` which sets up the environment
+5. **Permission denied**: Ensure test script is executable (`chmod +x run_tests.sh`)
+6. **Port 5432 in use**: Stop local PostgreSQL or change Docker port mapping
 
 ### Debugging
 
 For detailed debugging output, check:
+- Docker container logs: `cd docker && docker-compose logs pglance-db`
 - PostgreSQL logs for extension loading issues
 - Python test output for detailed error messages
 - Test data in `testdata/` directory for Lance table inspection
+- Container health: `cd docker && docker-compose ps`
 
 ## Integration with CI/CD
 

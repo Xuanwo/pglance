@@ -54,8 +54,8 @@ RUN apt-get clean && \
 WORKDIR /usr/src/pglance
 
 # Copy the pglance project source code into the Docker image
-# This assumes the Dockerfile is in the root of the pglance project.
-COPY . .
+# This assumes the Dockerfile is in the integration_tests/docker directory.
+COPY ../../ .
 
 # Step 8: Create PGRX_HOME directory
 RUN mkdir -p ${PGRX_HOME}
@@ -76,7 +76,7 @@ RUN cargo pgrx install --pg-config /usr/lib/postgresql/16/bin/pg_config
 
 # Step 12: Copy the initialization script that will create the pglance extension in the database.
 # Scripts in /docker-entrypoint-initdb.d/ are executed when the database is first initialized.
-COPY init-pglance.sh /docker-entrypoint-initdb.d/init-pglance.sh
+COPY ./init-pglance.sh /docker-entrypoint-initdb.d/init-pglance.sh
 
 # Step 13: Make the initialization script executable
 RUN chmod +x /docker-entrypoint-initdb.d/init-pglance.sh
