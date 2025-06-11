@@ -4,6 +4,9 @@
 *.iml
 **/*.rs.bk
 Cargo.lock
+.venv/
+.ruff_cache/
+
 # Test-related directories and files
 integration_tests/testdata/
 integration_tests/.venv/

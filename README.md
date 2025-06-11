@@ -277,7 +277,7 @@ Issues and Pull Requests are welcome!
 
 ## License
 
-MIT License
+Apache License 2.0
 
 ## Related Projects
 
