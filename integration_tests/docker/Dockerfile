@@ -76,7 +76,7 @@ RUN cargo pgrx install --pg-config /usr/lib/postgresql/16/bin/pg_config
 
 # Step 12: Copy the initialization script that will create the pglance extension in the database.
 # Scripts in /docker-entrypoint-initdb.d/ are executed when the database is first initialized.
-COPY ./init-pglance.sh /docker-entrypoint-initdb.d/init-pglance.sh
+COPY integration_tests/docker/init-pglance.sh /docker-entrypoint-initdb.d/init-pglance.sh
 
 # Step 13: Make the initialization script executable
 RUN chmod +x /docker-entrypoint-initdb.d/init-pglance.sh

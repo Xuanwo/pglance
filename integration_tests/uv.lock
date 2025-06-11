@@ -228,7 +228,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pglance-tests"
+name = "pglance-integration-tests"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
