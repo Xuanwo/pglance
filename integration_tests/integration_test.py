@@ -18,7 +18,7 @@ Requirements:
 Usage:
     # Recommended: Use the test runner
     ./run_tests.sh
-    
+
     # Manual execution (requires Docker environment to be running)
     python integration_test.py [--cleanup]
 
@@ -215,7 +215,9 @@ class PglanceIntegrationTest:
                 print("Please ensure pglance extension is properly installed")
                 sys.exit(1)
 
-    def test_schema_integration(self, table_name: str, expected_columns: List[str]) -> bool:
+    def test_schema_integration(
+        self, table_name: str, expected_columns: List[str]
+    ) -> bool:
         """Test Lance table schema integration with PostgreSQL"""
         display_path = os.path.join(self.host_data_dir, table_name)
         query_path = os.path.join(self.pglance_data_prefix, table_name)
@@ -252,7 +254,9 @@ class PglanceIntegrationTest:
                 print(f"❌ Schema integration test failed: {e}")
                 return False
 
-    def test_metadata_integration(self, table_name: str, expected_min_rows: int = 0) -> bool:
+    def test_metadata_integration(
+        self, table_name: str, expected_min_rows: int = 0
+    ) -> bool:
         """Test Lance table metadata integration with PostgreSQL"""
         display_path = os.path.join(self.host_data_dir, table_name)
         query_path = os.path.join(self.pglance_data_prefix, table_name)
