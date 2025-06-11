@@ -1,0 +1,6 @@
+comment = 'PostgreSQL extension for reading and querying Lance format tables'
+default_version = '@CARGO_VERSION@'
+module_pathname = 'pglance'
+relocatable = false
+superuser = true
+trusted = false

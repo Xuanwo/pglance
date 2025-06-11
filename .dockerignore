@@ -1,0 +1,47 @@
+# Rust / Cargo
+target/
+Cargo.lock
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+*.prof
+*.prof.json
+
+# Lance test data directory (to be volume mounted)
+lance_data_for_docker/
+
+# Temporary test directories if any were created outside lance_data_for_docker
+pglance_test_*/
+
+# IDE / Editor specific
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Any local configuration files not meant for the image
+# For example:
+# .env
+# config.local.toml
