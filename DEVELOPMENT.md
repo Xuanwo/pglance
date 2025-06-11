@@ -10,18 +10,19 @@ Install the following tools:
 - **uv** (Python package manager) - https://docs.astral.sh/uv/getting-started/installation/
 - **just** (command runner) - https://github.com/casey/just#installation
 - **PostgreSQL** (13-17) with development headers
+- **Protocol Buffers compiler** (protoc) - required for Lance dependencies
 
 ### Installing PostgreSQL on Ubuntu/Debian
 
 ```bash
 sudo apt-get update
-sudo apt-get install postgresql-16 postgresql-server-dev-16
+sudo apt-get install postgresql-16 postgresql-server-dev-16 protobuf-compiler
 ```
 
 ### Installing PostgreSQL on macOS
 
 ```bash
-brew install postgresql@16
+brew install postgresql@16 protobuf
 ```
 
 ## Quick Start

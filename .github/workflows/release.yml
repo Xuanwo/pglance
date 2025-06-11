@@ -44,7 +44,7 @@ jobs:
     - name: Install PostgreSQL ${{ matrix.pg-version }}
       run: |
         sudo apt-get update
-        sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+        sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
         echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
 
     - name: Install pgrx
@@ -54,7 +54,7 @@ jobs:
 
     - name: Build release package
       run: |
-        cargo pgrx package --features pg${{ matrix.pg-version }} --release
+        cargo pgrx package --no-default-features --features pg${{ matrix.pg-version }} --release
 
     - name: Create release archive
       run: |

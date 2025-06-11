@@ -47,7 +47,7 @@ jobs:
       - name: Install PostgreSQL ${{ matrix.pg-version }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
           echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
 
       - name: Install pgrx
@@ -57,7 +57,7 @@ jobs:
 
       - name: Build extension for PostgreSQL ${{ matrix.pg-version }}
         run: |
-          cargo pgrx package --features pg${{ matrix.pg-version }}
+          cargo pgrx package --no-default-features --features pg${{ matrix.pg-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -107,7 +107,7 @@ jobs:
       - name: Install PostgreSQL 16
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-16 postgresql-server-dev-16
+          sudo apt-get install -y postgresql-16 postgresql-server-dev-16 protobuf-compiler
           echo "/usr/lib/postgresql/16/bin" >> $GITHUB_PATH
 
       - name: Install pgrx
@@ -117,5 +117,5 @@ jobs:
 
       - name: Quick smoke test
         run: |
-          cargo pgrx run --features pg16 --package pglance
+          cargo pgrx run --no-default-features --features pg16 --package pglance
         timeout-minutes: 5

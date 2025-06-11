@@ -64,7 +64,7 @@ jobs:
       - name: Install PostgreSQL ${{ matrix.pg-version }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
           echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
 
       - name: Install pgrx
@@ -109,7 +109,7 @@ jobs:
       - name: Install PostgreSQL ${{ matrix.pg-version }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+          sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }} protobuf-compiler
           echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
 
       - name: Install pgrx
