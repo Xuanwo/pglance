@@ -222,6 +222,5 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn test_lance_scanner_creation() {
-    }
+    fn test_lance_scanner_creation() {}
 }

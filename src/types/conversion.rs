@@ -25,41 +25,24 @@ pub fn arrow_to_pg_type(arrow_type: &DataType) -> Result<pgrx::PgOid, pgrx::PgSq
         DataType::Time64(_) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TIMEOID)),
         DataType::Timestamp(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TIMESTAMPOID)),
         DataType::Interval(_) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::INTERVALOID)),
-        DataType::List(_) => {
-            Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
-        }
-        DataType::LargeList(_) => {
-            Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
-        }
-        DataType::FixedSizeList(field, _) => {
-            match field.data_type() {
-                DataType::Float32 => {
-                    Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::FLOAT4ARRAYOID))
-                }
-                DataType::Float64 => {
-                    Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::FLOAT8ARRAYOID))
-                }
-                _ => {
-                    Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
-                }
-            }
-        }
-        DataType::Struct(_) => {
-            Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
-        }
-        DataType::Union(_, _) => {
-            Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
-        }
-        DataType::Dictionary(_, value_type) => {
-            arrow_to_pg_type(value_type)
-        }
+        DataType::List(_) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID)),
+        DataType::LargeList(_) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID)),
+        DataType::FixedSizeList(field, _) => match field.data_type() {
+            DataType::Float32 => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::FLOAT4ARRAYOID)),
+            DataType::Float64 => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::FLOAT8ARRAYOID)),
+            _ => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID)),
+        },
+        DataType::Struct(_) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID)),
+        DataType::Union(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID)),
+        DataType::Dictionary(_, value_type) => arrow_to_pg_type(value_type),
         DataType::Decimal128(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::NUMERICOID)),
         DataType::Decimal256(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::NUMERICOID)),
-        DataType::Map(_, _) => {
-            Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID))
-        }
+        DataType::Map(_, _) => Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::JSONBOID)),
         _ => {
-            pgrx::warning!("Unsupported Arrow type: {:?}, converting to TEXT", arrow_type);
+            pgrx::warning!(
+                "Unsupported Arrow type: {:?}, converting to TEXT",
+                arrow_type
+            );
             Ok(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TEXTOID))
         }
     }

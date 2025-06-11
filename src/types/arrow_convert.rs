@@ -2,7 +2,10 @@ use arrow::array::*;
 use arrow::datatypes::*;
 use pgrx::prelude::*;
 
-pub fn arrow_value_to_datum(array: &dyn arrow::array::Array, row_idx: usize) -> Result<Option<pgrx::pg_sys::Datum>, pgrx::PgSqlErrorCode> {
+pub fn arrow_value_to_datum(
+    array: &dyn arrow::array::Array,
+    row_idx: usize,
+) -> Result<Option<pgrx::pg_sys::Datum>, pgrx::PgSqlErrorCode> {
     if array.is_null(row_idx) {
         return Ok(None);
     }
@@ -49,16 +52,21 @@ pub fn arrow_value_to_datum(array: &dyn arrow::array::Array, row_idx: usize) -> 
         }
     };
 
-    datum.ok_or(pgrx::PgSqlErrorCode::ERRCODE_NULL_VALUE_NOT_ALLOWED)
+    datum
+        .ok_or(pgrx::PgSqlErrorCode::ERRCODE_NULL_VALUE_NOT_ALLOWED)
         .map(Some)
 }
 
 pub fn arrow_schema_to_pg_columns(schema: &Schema) -> Vec<(String, pgrx::PgOid, bool)> {
-    schema.fields().iter().map(|field| {
-        let name = field.name().clone();
-        let pg_type = super::conversion::arrow_to_pg_type(field.data_type())
-            .unwrap_or(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TEXTOID));
-        let nullable = field.is_nullable();
-        (name, pg_type, nullable)
-    }).collect()
+    schema
+        .fields()
+        .iter()
+        .map(|field| {
+            let name = field.name().clone();
+            let pg_type = super::conversion::arrow_to_pg_type(field.data_type())
+                .unwrap_or(pgrx::PgOid::BuiltIn(pgrx::PgBuiltInOids::TEXTOID));
+            let nullable = field.is_nullable();
+            (name, pg_type, nullable)
+        })
+        .collect()
 }

@@ -1,11 +1,11 @@
 use pgrx::prelude::*;
 
 use arrow::array::{
-    Array, BooleanArray, Date32Array, Date64Array, FixedSizeListArray, Float16Array,
-    Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
-    StringArray, LargeStringArray, StructArray, TimestampMicrosecondArray, TimestampMillisecondArray,
-    TimestampNanosecondArray, TimestampSecondArray, UInt16Array, UInt32Array, UInt64Array, UInt8Array,
-    BinaryArray, LargeBinaryArray, FixedSizeBinaryArray, GenericListArray,
+    Array, BinaryArray, BooleanArray, Date32Array, Date64Array, FixedSizeBinaryArray,
+    FixedSizeListArray, Float16Array, Float32Array, Float64Array, GenericListArray, Int16Array,
+    Int32Array, Int64Array, Int8Array, LargeBinaryArray, LargeStringArray, StringArray,
+    StructArray, TimestampMicrosecondArray, TimestampMillisecondArray, TimestampNanosecondArray,
+    TimestampSecondArray, UInt16Array, UInt32Array, UInt64Array, UInt8Array,
 };
 use arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -28,38 +28,116 @@ fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
     }
 
     match array.data_type() {
-        DataType::Boolean => Value::Bool(array.as_any().downcast_ref::<BooleanArray>().unwrap().value(row_idx)),
-        DataType::Int8 => json!(array.as_any().downcast_ref::<Int8Array>().unwrap().value(row_idx)),
-        DataType::Int16 => json!(array.as_any().downcast_ref::<Int16Array>().unwrap().value(row_idx)),
-        DataType::Int32 => json!(array.as_any().downcast_ref::<Int32Array>().unwrap().value(row_idx)),
-        DataType::Int64 => json!(array.as_any().downcast_ref::<Int64Array>().unwrap().value(row_idx)),
-        DataType::UInt8 => json!(array.as_any().downcast_ref::<UInt8Array>().unwrap().value(row_idx)),
-        DataType::UInt16 => json!(array.as_any().downcast_ref::<UInt16Array>().unwrap().value(row_idx)),
-        DataType::UInt32 => json!(array.as_any().downcast_ref::<UInt32Array>().unwrap().value(row_idx)),
-        DataType::UInt64 => json!(array.as_any().downcast_ref::<UInt64Array>().unwrap().value(row_idx)),
+        DataType::Boolean => Value::Bool(
+            array
+                .as_any()
+                .downcast_ref::<BooleanArray>()
+                .unwrap()
+                .value(row_idx),
+        ),
+        DataType::Int8 => json!(array
+            .as_any()
+            .downcast_ref::<Int8Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::Int16 => json!(array
+            .as_any()
+            .downcast_ref::<Int16Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::Int32 => json!(array
+            .as_any()
+            .downcast_ref::<Int32Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::Int64 => json!(array
+            .as_any()
+            .downcast_ref::<Int64Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::UInt8 => json!(array
+            .as_any()
+            .downcast_ref::<UInt8Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::UInt16 => json!(array
+            .as_any()
+            .downcast_ref::<UInt16Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::UInt32 => json!(array
+            .as_any()
+            .downcast_ref::<UInt32Array>()
+            .unwrap()
+            .value(row_idx)),
+        DataType::UInt64 => json!(array
+            .as_any()
+            .downcast_ref::<UInt64Array>()
+            .unwrap()
+            .value(row_idx)),
         DataType::Float16 => {
-            let val = array.as_any().downcast_ref::<Float16Array>().unwrap().value(row_idx);
-            Number::from_f64(val.to_f32() as f64).map(Value::Number).unwrap_or(Value::Null)
+            let val = array
+                .as_any()
+                .downcast_ref::<Float16Array>()
+                .unwrap()
+                .value(row_idx);
+            Number::from_f64(val.to_f32() as f64)
+                .map(Value::Number)
+                .unwrap_or(Value::Null)
         }
         DataType::Float32 => {
-            let val = array.as_any().downcast_ref::<Float32Array>().unwrap().value(row_idx);
-            Number::from_f64(val as f64).map(Value::Number).unwrap_or(Value::Null)
+            let val = array
+                .as_any()
+                .downcast_ref::<Float32Array>()
+                .unwrap()
+                .value(row_idx);
+            Number::from_f64(val as f64)
+                .map(Value::Number)
+                .unwrap_or(Value::Null)
         }
         DataType::Float64 => {
-            let val = array.as_any().downcast_ref::<Float64Array>().unwrap().value(row_idx);
-            Number::from_f64(val).map(Value::Number).unwrap_or(Value::Null)
+            let val = array
+                .as_any()
+                .downcast_ref::<Float64Array>()
+                .unwrap()
+                .value(row_idx);
+            Number::from_f64(val)
+                .map(Value::Number)
+                .unwrap_or(Value::Null)
         }
-        DataType::Utf8 => Value::String(array.as_any().downcast_ref::<StringArray>().unwrap().value(row_idx).to_string()),
-        DataType::LargeUtf8 => Value::String(array.as_any().downcast_ref::<LargeStringArray>().unwrap().value(row_idx).to_string()),
+        DataType::Utf8 => Value::String(
+            array
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .unwrap()
+                .value(row_idx)
+                .to_string(),
+        ),
+        DataType::LargeUtf8 => Value::String(
+            array
+                .as_any()
+                .downcast_ref::<LargeStringArray>()
+                .unwrap()
+                .value(row_idx)
+                .to_string(),
+        ),
         DataType::Date32 => {
-            let days = array.as_any().downcast_ref::<Date32Array>().unwrap().value(row_idx);
+            let days = array
+                .as_any()
+                .downcast_ref::<Date32Array>()
+                .unwrap()
+                .value(row_idx);
             NaiveDate::from_ymd_opt(1970, 1, 1)
                 .and_then(|d| d.checked_add_signed(chrono::Duration::days(days as i64)))
                 .map(|d| Value::String(d.to_string()))
                 .unwrap_or(Value::Null)
         }
         DataType::Date64 => {
-            let millis = array.as_any().downcast_ref::<Date64Array>().unwrap().value(row_idx);
+            let millis = array
+                .as_any()
+                .downcast_ref::<Date64Array>()
+                .unwrap()
+                .value(row_idx);
             chrono::DateTime::from_timestamp_millis(millis)
                 .map(|dt| Value::String(dt.naive_utc().date().to_string()))
                 .unwrap_or(Value::Null)
@@ -67,23 +145,45 @@ fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
         DataType::Timestamp(unit, tz_opt) => {
             let naive_dt_opt = match unit {
                 ArrowTimeUnit::Second => {
-                    let secs = array.as_any().downcast_ref::<TimestampSecondArray>().unwrap().value(row_idx);
+                    let secs = array
+                        .as_any()
+                        .downcast_ref::<TimestampSecondArray>()
+                        .unwrap()
+                        .value(row_idx);
                     chrono::DateTime::from_timestamp(secs, 0).map(|dt| dt.naive_utc())
                 }
                 ArrowTimeUnit::Millisecond => {
-                    let millis = array.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap().value(row_idx);
+                    let millis = array
+                        .as_any()
+                        .downcast_ref::<TimestampMillisecondArray>()
+                        .unwrap()
+                        .value(row_idx);
                     chrono::DateTime::from_timestamp_millis(millis).map(|dt| dt.naive_utc())
                 }
                 ArrowTimeUnit::Microsecond => {
-                    let micros = array.as_any().downcast_ref::<TimestampMicrosecondArray>().unwrap().value(row_idx);
+                    let micros = array
+                        .as_any()
+                        .downcast_ref::<TimestampMicrosecondArray>()
+                        .unwrap()
+                        .value(row_idx);
                     chrono::DateTime::from_timestamp_micros(micros).map(|dt| dt.naive_utc())
                 }
                 ArrowTimeUnit::Nanosecond => {
-                    let nanos = array.as_any().downcast_ref::<TimestampNanosecondArray>().unwrap().value(row_idx);
-                    chrono::DateTime::from_timestamp(nanos / 1_000_000_000, (nanos % 1_000_000_000) as u32).map(|dt| dt.naive_utc())
+                    let nanos = array
+                        .as_any()
+                        .downcast_ref::<TimestampNanosecondArray>()
+                        .unwrap()
+                        .value(row_idx);
+                    chrono::DateTime::from_timestamp(
+                        nanos / 1_000_000_000,
+                        (nanos % 1_000_000_000) as u32,
+                    )
+                    .map(|dt| dt.naive_utc())
                 }
             };
-            let dt_str = naive_dt_opt.map(|dt| dt.to_string()).unwrap_or_else(|| "InvalidTimestamp".to_string());
+            let dt_str = naive_dt_opt
+                .map(|dt| dt.to_string())
+                .unwrap_or_else(|| "InvalidTimestamp".to_string());
             if let Some(tz) = tz_opt {
                 Value::String(format!("{} {}", dt_str, tz))
             } else {
@@ -91,8 +191,14 @@ fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
             }
         }
         DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _) => {
-            fn handle_list<OffsetSize: arrow::array::OffsetSizeTrait>(array: &dyn Array, row_idx: usize) -> Value {
-                let list_array = array.as_any().downcast_ref::<GenericListArray<OffsetSize>>().unwrap();
+            fn handle_list<OffsetSize: arrow::array::OffsetSizeTrait>(
+                array: &dyn Array,
+                row_idx: usize,
+            ) -> Value {
+                let list_array = array
+                    .as_any()
+                    .downcast_ref::<GenericListArray<OffsetSize>>()
+                    .unwrap();
                 let value_array_for_row = list_array.value(row_idx);
                 let mut json_list = Vec::new();
                 for i in 0..value_array_for_row.len() {
@@ -122,18 +228,44 @@ fn arrow_value_to_serde_json(array: &dyn Array, row_idx: usize) -> Value {
             let mut json_map = Map::new();
             for (i, field) in fields.iter().enumerate() {
                 let field_array = struct_array.column(i);
-                json_map.insert(field.name().clone(), arrow_value_to_serde_json(field_array.as_ref(), row_idx));
+                json_map.insert(
+                    field.name().clone(),
+                    arrow_value_to_serde_json(field_array.as_ref(), row_idx),
+                );
             }
             Value::Object(json_map)
         }
-        DataType::Binary => Value::String(STANDARD.encode(array.as_any().downcast_ref::<BinaryArray>().unwrap().value(row_idx))),
-        DataType::LargeBinary => Value::String(STANDARD.encode(array.as_any().downcast_ref::<LargeBinaryArray>().unwrap().value(row_idx))),
-        DataType::FixedSizeBinary(_) => Value::String(STANDARD.encode(array.as_any().downcast_ref::<FixedSizeBinaryArray>().unwrap().value(row_idx))),
+        DataType::Binary => Value::String(
+            STANDARD.encode(
+                array
+                    .as_any()
+                    .downcast_ref::<BinaryArray>()
+                    .unwrap()
+                    .value(row_idx),
+            ),
+        ),
+        DataType::LargeBinary => Value::String(
+            STANDARD.encode(
+                array
+                    .as_any()
+                    .downcast_ref::<LargeBinaryArray>()
+                    .unwrap()
+                    .value(row_idx),
+            ),
+        ),
+        DataType::FixedSizeBinary(_) => Value::String(
+            STANDARD.encode(
+                array
+                    .as_any()
+                    .downcast_ref::<FixedSizeBinaryArray>()
+                    .unwrap()
+                    .value(row_idx),
+            ),
+        ),
 
         _ => Value::String(format!("<unsupported_type: {:?}>", array.data_type())),
     }
 }
-
 
 #[pg_extern]
 fn hello_pglance() -> &'static str {
@@ -207,7 +339,7 @@ fn lance_scan_jsonb(
         .unwrap_or_else(|_| pgrx::error!("Failed to open Lance table at: {}", table_path));
 
     let mut scan_iter = scanner
-        .scan_with_filter(None, limit) 
+        .scan_with_filter(None, limit)
         .unwrap_or_else(|_| pgrx::error!("Failed to create scan iterator"));
 
     let schema = scanner.schema();
