@@ -73,7 +73,7 @@ jobs:
           cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
 
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features --features pg${{ matrix.pg-version }} -- -D warnings
+        run: cargo clippy --all-targets --features pg${{ matrix.pg-version }} -- -D warnings
 
   rust-tests:
     name: Rust Tests
