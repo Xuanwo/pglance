@@ -25,8 +25,8 @@ check_dependencies() {
         exit 1
     fi
 
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        echo "❌ Error: docker-compose not found. Please ensure Docker Compose is installed."
+    if ! docker compose version &> /dev/null; then
+        echo "❌ Error: docker compose not found. Please ensure Docker Compose is installed."
         exit 1
     fi
 
@@ -51,15 +51,15 @@ start_test_database() {
     # Stop any existing containers
     if docker ps -q --filter "name=pglance-integration-test" | grep -q .; then
         echo "🛑 Stopping existing test container..."
-        docker-compose down
+        docker compose down
     fi
 
     # Build and start the container
     echo "🔨 Building pglance Docker image..."
-    docker-compose build
+    docker compose build
 
     echo "🚀 Starting PostgreSQL container with pglance extension..."
-    docker-compose up -d
+    docker compose up -d
 
     # Wait for PostgreSQL to be ready
     echo "⏳ Waiting for PostgreSQL to be ready..."
@@ -67,14 +67,14 @@ start_test_database() {
     local attempt=1
 
     while [ $attempt -le $max_attempts ]; do
-        if docker-compose exec -T pglance-db pg_isready -U postgres &> /dev/null; then
+        if docker compose exec -T pglance-db pg_isready -U postgres &> /dev/null; then
             echo "✅ PostgreSQL is ready!"
             break
         fi
 
         if [ $attempt -eq $max_attempts ]; then
             echo "❌ PostgreSQL failed to start within expected time"
-            docker-compose logs pglance-db
+            docker compose logs pglance-db
             exit 1
         fi
 
@@ -85,11 +85,11 @@ start_test_database() {
 
     # Verify pglance extension is available
     echo "🔍 Verifying pglance extension..."
-    if docker-compose exec -T pglance-db psql -U postgres -c "SELECT hello_pglance();" &> /dev/null; then
+    if docker compose exec -T pglance-db psql -U postgres -c "SELECT hello_pglance();" &> /dev/null; then
         echo "✅ pglance extension is working!"
     else
         echo "❌ pglance extension verification failed"
-        docker-compose logs pglance-db
+        docker compose logs pglance-db
         exit 1
     fi
 
@@ -100,7 +100,7 @@ stop_test_database() {
     echo "🛑 Stopping PostgreSQL test container..."
 
     cd "$DOCKER_DIR"
-    docker-compose down
+    docker compose down
     cd "$SCRIPT_DIR"
 
     echo "✅ Test container stopped"
