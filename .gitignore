@@ -7,3 +7,4 @@ Cargo.lock
 pg_regress/results
 pg_regress/regression.diffs
 pg_regress/regression.out
+testdata/

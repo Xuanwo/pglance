@@ -388,7 +388,7 @@ def main():
     """Main test execution function"""
     parser = argparse.ArgumentParser(description="End-to-end test for pglance extension")
     parser.add_argument("--cleanup", action="store_true", help="Clean up test files after completion")
-    parser.add_argument("--host-data-dir", default="./lance_test_data", help="Directory on host to store Lance tables (default: ./lance_test_data)")
+    parser.add_argument("--host-data-dir", default="./testdata", help="Directory on host to store Lance tables (default: ./testdata)")
     parser.add_argument("--pglance-data-prefix", default="/test_data_in_container", help="Absolute path prefix for Lance tables inside the PostgreSQL/pglance environment (e.g., Docker container path)")
     parser.add_argument("--db-host", default="localhost", help="PostgreSQL host")
     parser.add_argument("--db-port", default="5432", help="PostgreSQL port")
