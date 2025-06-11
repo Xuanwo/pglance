@@ -1,0 +1,151 @@
+name: Rust Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  rust-formatting:
+    name: Check Rust Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+          override: true
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+  rust-clippy:
+    name: Rust Clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+          override: true
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-clippy-pg16-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-clippy-pg16-
+            ${{ runner.os }}-cargo-clippy-
+
+      - name: Cache cargo-pgrx installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/cargo-pgrx
+          key: ${{ runner.os }}-cargo-pgrx-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-cargo-pgrx-
+
+      - name: Cache PostgreSQL installations
+        uses: actions/cache@v3
+        with:
+          path: ~/.pgrx
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-0.14.3-
+            ${{ runner.os }}-pgrx-pg16-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential protobuf-compiler libreadline-dev zlib1g-dev libssl-dev libicu-dev
+
+      - name: Install and initialize pgrx
+        run: |
+          if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+            cargo install cargo-pgrx --version=0.14.3 --locked
+            cargo pgrx init --pg16=download
+          fi
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --features pg16 -- -D warnings
+
+  rust-tests:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-test-pg16-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-pg16-
+            ${{ runner.os }}-cargo-test-
+
+      - name: Cache cargo-pgrx installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/bin/cargo-pgrx
+          key: ${{ runner.os }}-cargo-pgrx-0.14.3
+          restore-keys: |
+            ${{ runner.os }}-cargo-pgrx-
+
+      - name: Cache PostgreSQL installations
+        uses: actions/cache@v3
+        with:
+          path: ~/.pgrx
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-0.14.3-
+            ${{ runner.os }}-pgrx-pg16-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential protobuf-compiler libreadline-dev zlib1g-dev libssl-dev libicu-dev
+
+      - name: Install and initialize pgrx
+        run: |
+          if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
+            cargo install cargo-pgrx --version=0.14.3 --locked
+            cargo pgrx init --pg16=download
+          fi
+
+      - name: Run Rust tests
+        run: cargo test --features pg16

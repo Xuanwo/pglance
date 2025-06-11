@@ -11,14 +11,16 @@ crate-type = ["cdylib", "lib"]
 name = "pgrx_embed_pglance"
 path = "./src/bin/pgrx_embed.rs"
 
+
+
 [features]
-default = ["pg13"]
+default = ["pg16"]
 pg13 = ["pgrx/pg13", "pgrx-tests/pg13" ]
 pg14 = ["pgrx/pg14", "pgrx-tests/pg14" ]
 pg15 = ["pgrx/pg15", "pgrx-tests/pg15" ]
 pg16 = ["pgrx/pg16", "pgrx-tests/pg16" ]
 pg17 = ["pgrx/pg17", "pgrx-tests/pg17" ]
-pg_test = []
+pg_test = ["tempfile"]
 
 [dependencies]
 pgrx = "=0.14.3"
@@ -34,6 +36,11 @@ base64 = "0.22"
 
 [dev-dependencies]
 pgrx-tests = "=0.14.3"
+tempfile = "3.8"
+
+[dependencies.tempfile]
+version = "3.8"
+optional = true
 
 [profile.dev]
 panic = "unwind"
