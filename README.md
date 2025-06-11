@@ -207,9 +207,18 @@ cargo pgrx run
 # Unit tests
 cargo test
 
-# Integration tests
+# PostgreSQL regression tests
 cargo pgrx test
+
+# Comprehensive integration tests
+./integration_tests/run_tests.sh
+
+# Specific test suites
+./integration_tests/run_tests.sh --e2e-only      # End-to-end tests only
+./integration_tests/run_tests.sh --demo-only     # Demo tests only
 ```
+
+For detailed testing information, see [Integration Tests README](integration_tests/README.md).
 
 ### Debugging
 
@@ -233,7 +242,13 @@ pglance/
 │   └── scanner/            # Lance scanner
 │       └── lance_scanner.rs # Lance table scanning implementation
 ├── sql/                    # SQL scripts
-├── demo.sql               # Demo script
+├── integration_tests/      # Integration and end-to-end tests
+│   ├── end_to_end_test.py  # Python-based comprehensive tests
+│   ├── demo.sql           # Demo script
+│   ├── pg_regress/        # PostgreSQL regression tests
+│   ├── testdata/          # Test data directory
+│   ├── run_tests.sh       # Test runner script
+│   └── pyproject.toml     # Python test dependencies
 └── Cargo.toml             # Rust dependency configuration
 ```
 

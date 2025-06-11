@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-End-to-End Test for pglance Extension
-=====================================
+Integration Test for pglance Extension
+======================================
 
-This script creates a comprehensive test that:
+This script creates comprehensive integration tests that:
 1. Creates various Lance tables using PyLance with different data types
 2. Tests pglance extension functionality to read those tables
-3. Validates data integrity and type conversion
+3. Validates data integrity and type conversion between Lance and PostgreSQL
 
 Requirements:
 - pylance (pip install pylance)
@@ -15,7 +15,7 @@ Requirements:
 - PostgreSQL with pglance extension installed
 
 Usage:
-    python end_to_end_test.py [--cleanup]
+    python integration_test.py [--cleanup]
 """
 
 import os
@@ -161,8 +161,8 @@ class LanceTableGenerator:
         return table_name  # Return relative name
 
 
-class PglanceTest:
-    """Tests pglance extension functionality"""
+class PglanceIntegrationTest:
+    """Integration tests for pglance extension functionality"""
 
     def __init__(
         self, db_params: Dict[str, Any], host_data_dir: str, pglance_data_prefix: str
@@ -199,8 +199,8 @@ class PglanceTest:
                 print("Please ensure pglance extension is properly installed")
                 sys.exit(1)
 
-    def test_table_info(self, table_name: str, expected_columns: List[str]) -> bool:
-        """Test lance_table_info function"""
+    def test_schema_integration(self, table_name: str, expected_columns: List[str]) -> bool:
+        """Test Lance table schema integration with PostgreSQL"""
         display_path = os.path.join(self.host_data_dir, table_name)
         query_path = os.path.join(self.pglance_data_prefix, table_name)
         print(f"\n🔍 Testing table info for: {display_path} (querying as {query_path})")
@@ -229,15 +229,15 @@ class PglanceTest:
                     print(f"❌ Missing expected columns: {missing}")
                     return False
 
-                print("✅ Table info test passed")
+                print("✅ Schema integration test passed")
                 return True
 
             except Exception as e:
-                print(f"❌ Table info test failed: {e}")
+                print(f"❌ Schema integration test failed: {e}")
                 return False
 
-    def test_table_stats(self, table_name: str, expected_min_rows: int = 0) -> bool:
-        """Test lance_table_stats function"""
+    def test_metadata_integration(self, table_name: str, expected_min_rows: int = 0) -> bool:
+        """Test Lance table metadata integration with PostgreSQL"""
         display_path = os.path.join(self.host_data_dir, table_name)
         query_path = os.path.join(self.pglance_data_prefix, table_name)
         print(
@@ -270,17 +270,17 @@ class PglanceTest:
                     )
                     return False
 
-                print("✅ Table stats test passed")
+                print("✅ Metadata integration test passed")
                 return True
 
             except Exception as e:
-                print(f"❌ Table stats test failed: {e}")
+                print(f"❌ Metadata integration test failed: {e}")
                 return False
 
-    def test_table_scan(
+    def test_data_integration(
         self, table_name: str, limit: int = 5, expected_fields: List[str] = None
     ) -> bool:
-        """Test lance_scan_jsonb function"""
+        """Test Lance data integration and type conversion with PostgreSQL"""
         display_path = os.path.join(self.host_data_dir, table_name)
         query_path = os.path.join(self.pglance_data_prefix, table_name)
         print(
@@ -314,15 +314,15 @@ class PglanceTest:
                         print(f"❌ Missing expected fields: {missing}")
                         return False
 
-                print("✅ Table scan test passed")
+                print("✅ Data integration test passed")
                 return True
 
             except Exception as e:
-                print(f"❌ Table scan test failed: {e}")
+                print(f"❌ Data integration test failed: {e}")
                 return False
 
-    def run_comprehensive_test(self) -> Dict[str, bool]:
-        """Run comprehensive tests on all tables"""
+    def run_comprehensive_integration_test(self) -> Dict[str, bool]:
+        """Run comprehensive integration tests on all table types"""
         results = {}
 
         # Test configurations for each table type
@@ -371,23 +371,23 @@ class PglanceTest:
 
             config = test_configs.get(table_name, {})  # Should always find a config
 
-            # Run all tests for this table, passing the table_name
-            info_test = self.test_table_info(
+            # Run all integration tests for this table
+            schema_test = self.test_schema_integration(
                 table_name, config.get("expected_columns", [])
             )
 
-            stats_test = self.test_table_stats(
+            metadata_test = self.test_metadata_integration(
                 table_name, config.get("expected_min_rows", 0)
             )
 
-            scan_test = self.test_table_scan(
+            data_test = self.test_data_integration(
                 table_name,
                 config.get("scan_limit", 5),
                 config.get("expected_columns", []),
             )
 
-            # Overall result for this table
-            table_result = info_test and stats_test and scan_test
+            # Overall integration test result for this table
+            table_result = schema_test and metadata_test and data_test
             results[table_name] = table_result
 
             status = "✅ PASSED" if table_result else "❌ FAILED"
@@ -403,9 +403,9 @@ class PglanceTest:
 
 
 def main():
-    """Main test execution function"""
+    """Main integration test execution function"""
     parser = argparse.ArgumentParser(
-        description="End-to-end test for pglance extension"
+        description="Integration test for pglance extension"
     )
     parser.add_argument(
         "--cleanup", action="store_true", help="Clean up test files after completion"
@@ -434,7 +434,7 @@ def main():
     host_data_dir = args.host_data_dir
     os.makedirs(host_data_dir, exist_ok=True)
 
-    print(f"🚀 Starting pglance end-to-end test")
+    print(f"🚀 Starting pglance integration test")
     print(f"📁 Host data directory for Lance tables: {host_data_dir}")
     print(f"🔩 pglance data prefix (container path): {args.pglance_data_prefix}")
 
@@ -456,9 +456,9 @@ def main():
         # This is implicitly checked as create_..._table would error out or return None
         # if there was an issue. The names returned are used more as keys.
 
-        # Step 2: Test pglance functionality
+        # Step 2: Run integration tests
         print(f"\n{'=' * 60}")
-        print("🧪 Step 2: Testing pglance extension")
+        print("🧪 Step 2: Running pglance integration tests")
         print(f"\n{'=' * 60}")
 
         db_params = {
@@ -469,12 +469,12 @@ def main():
             "password": args.db_password,
         }
 
-        tester = PglanceTest(db_params, args.host_data_dir, args.pglance_data_prefix)
+        tester = PglanceIntegrationTest(db_params, args.host_data_dir, args.pglance_data_prefix)
         tester.connect()
         tester.setup_extension()
 
-        # Run comprehensive tests. It will use table names from its internal test_configs.
-        results = tester.run_comprehensive_test()
+        # Run comprehensive integration tests
+        results = tester.run_comprehensive_integration_test()
 
         # Step 3: Report results
         print(f"\n{'=' * 60}")
@@ -491,16 +491,16 @@ def main():
         print(f"\n📈 Summary: {passed_tests}/{total_tests} tests passed")
 
         if passed_tests == total_tests:
-            print("🎉 All tests passed! pglance is working correctly.")
+            print("🎉 All integration tests passed! pglance is working correctly.")
             exit_code = 0
         else:
-            print("⚠️  Some tests failed. Please check the output above.")
+            print("⚠️  Some integration tests failed. Please check the output above.")
             exit_code = 1
 
         tester.close()
 
     except Exception as e:
-        print(f"❌ Test execution failed: {e}")
+        print(f"❌ Integration test execution failed: {e}")
         exit_code = 1
 
     finally:

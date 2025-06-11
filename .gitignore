@@ -4,7 +4,6 @@
 *.iml
 **/*.rs.bk
 Cargo.lock
-pg_regress/results
-pg_regress/regression.diffs
-pg_regress/regression.out
-testdata/
+# Test-related directories and files
+integration_tests/testdata/
+integration_tests/.venv/
