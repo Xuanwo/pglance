@@ -2,79 +2,83 @@ name: Python Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 jobs:
   python-formatting:
     name: Check Python Formatting
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.11
 
-    - name: Install Python dependencies
-      working-directory: integration_tests
-      run: uv sync
+      - name: Install Python dependencies
+        working-directory: integration_tests
+        run: uv sync
 
-    - name: Check Python formatting with ruff
-      working-directory: integration_tests
-      run: uv run ruff format --check .
+      - name: Check Python formatting with ruff
+        working-directory: integration_tests
+        run: uv run ruff format --check .
 
   python-linting:
     name: Python Linting
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.11
 
-    - name: Install Python dependencies
-      working-directory: integration_tests
-      run: uv sync
+      - name: Install Python dependencies
+        working-directory: integration_tests
+        run: uv sync
 
-    - name: Run Python linting with ruff
-      working-directory: integration_tests
-      run: uv run ruff check .
+      - name: Run Python linting with ruff
+        working-directory: integration_tests
+        run: uv run ruff check .
 
   python-imports:
     name: Python Import Sorting
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.11
 
-    - name: Install Python dependencies
-      working-directory: integration_tests
-      run: uv sync
+      - name: Install Python dependencies
+        working-directory: integration_tests
+        run: uv sync
 
-    - name: Check import sorting with ruff
-      working-directory: integration_tests
-      run: uv run ruff check --select I .
+      - name: Check import sorting with ruff
+        working-directory: integration_tests
+        run: uv run ruff check --select I .
