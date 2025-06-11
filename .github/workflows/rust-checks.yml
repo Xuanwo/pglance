@@ -68,8 +68,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.pgrx
-          key: ${{ runner.os }}-pgrx-pg16-0.14.3
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-0.14.3-
             ${{ runner.os }}-pgrx-pg16-
 
       - name: Install system dependencies
@@ -82,7 +83,7 @@ jobs:
           if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
             cargo install cargo-pgrx --version=0.14.3 --locked
           fi
-          cargo pgrx init --pg16=download
+          cargo pgrx init
 
       - name: Run Clippy
         run: cargo clippy --all-targets --features pg16 -- -D warnings
@@ -125,8 +126,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.pgrx
-          key: ${{ runner.os }}-pgrx-pg16-0.14.3
+          key: ${{ runner.os }}-pgrx-pg16-0.14.3-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
+            ${{ runner.os }}-pgrx-pg16-0.14.3-
             ${{ runner.os }}-pgrx-pg16-
 
       - name: Install system dependencies
@@ -139,7 +141,7 @@ jobs:
           if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
             cargo install cargo-pgrx --version=0.14.3 --locked
           fi
-          cargo pgrx init --pg16=download
+          cargo pgrx init
 
       - name: Run Rust tests
         run: cargo test --features pg16
