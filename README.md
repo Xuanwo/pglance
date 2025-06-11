@@ -188,46 +188,78 @@ Scans Lance table and returns data in JSONB format.
 
 ## Development
 
-### Building Development Environment
+### Prerequisites
+
+Install required tools:
+- **Rust** (latest stable) - https://rustup.rs/
+- **uv** (Python package manager) - https://docs.astral.sh/uv/getting-started/installation/
+- **just** (command runner) - https://github.com/casey/just#installation
+- **PostgreSQL** (13-17) with development headers
+
+### Quick Development Setup
 
 ```bash
-# Install dependencies
-cargo install --locked cargo-pgrx@0.14.3
+# Setup development environment
+just setup
 
-# Initialize pgrx (specify PostgreSQL version)
-cargo pgrx init
+# Run all quality checks
+just check
 
-# Run in development mode
-cargo pgrx run
+# Auto-format code
+just fmt
+
+# Build extension
+just build
+
+# Run tests
+just test
+
+# Start PostgreSQL with extension
+just run
 ```
 
-### Running Tests
+### Available Commands
+
+```bash
+just                    # Show all available commands
+just check              # Run all quality checks
+just fmt                # Auto-format all code
+just build              # Build extension
+just test               # Run Rust tests
+just e2e                # Run integration tests
+just run                # Start PostgreSQL with extension
+just ci                 # Simulate CI locally
+```
+
+You can specify PostgreSQL version:
+```bash
+just build pg=15        # Build for PostgreSQL 15
+just test pg=17         # Test with PostgreSQL 17
+```
+
+### Manual Commands (if needed)
 
 ```bash
 # Unit tests
-cargo test
+cargo test --features pg16
 
 # PostgreSQL regression tests
-cargo pgrx test
+cargo pgrx test --features pg16
 
-# Comprehensive integration tests
-./integration_tests/run_tests.sh
-
-# Specific test suites
-./integration_tests/run_tests.sh --e2e-only      # End-to-end tests only
-./integration_tests/run_tests.sh --demo-only     # Demo tests only
+# Integration tests
+cd integration_tests && ./run_tests.sh
 ```
 
-For detailed testing information, see [Integration Tests README](integration_tests/README.md).
+For detailed development information, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ### Debugging
 
 ```bash
 # Compile check
-cargo check
+cargo check --features pg16
 
 # Verbose logging
-RUST_LOG=debug cargo pgrx run
+RUST_LOG=debug just run
 ```
 
 ## Architecture Design

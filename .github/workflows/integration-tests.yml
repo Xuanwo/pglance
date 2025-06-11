@@ -1,0 +1,121 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  integration-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        pg-version: [13, 15, 16]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-e2e-pg${{ matrix.pg-version }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-e2e-pg${{ matrix.pg-version }}-
+          ${{ runner.os }}-cargo-e2e-
+
+    - name: Install PostgreSQL ${{ matrix.pg-version }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+        echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+
+    - name: Install pgrx
+      run: |
+        cargo install cargo-pgrx --version=0.14.3 --locked
+        cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+
+    - name: Build extension for PostgreSQL ${{ matrix.pg-version }}
+      run: |
+        cargo pgrx package --features pg${{ matrix.pg-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
+    - name: Set up Python
+      run: uv python install 3.11
+
+    - name: Install Python dependencies
+      working-directory: integration_tests
+      run: uv sync
+
+    - name: Run integration tests
+      working-directory: integration_tests
+      run: |
+        chmod +x run_tests.sh
+        ./run_tests.sh
+      env:
+        PG_VERSION: ${{ matrix.pg-version }}
+
+    - name: Upload test artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-logs-pg${{ matrix.pg-version }}
+        path: |
+          integration_tests/testdata/
+          integration_tests/docker/logs/
+        retention-days: 7
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Install PostgreSQL 16
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-16 postgresql-server-dev-16
+        echo "/usr/lib/postgresql/16/bin" >> $GITHUB_PATH
+
+    - name: Install pgrx
+      run: |
+        cargo install cargo-pgrx --version=0.14.3 --locked
+        cargo pgrx init --pg16 /usr/lib/postgresql/16/bin/pg_config
+
+    - name: Quick smoke test
+      run: |
+        cargo pgrx run --features pg16 --package pglance
+      timeout-minutes: 5

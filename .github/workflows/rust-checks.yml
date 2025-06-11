@@ -1,0 +1,122 @@
+name: Rust Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  rust-formatting:
+    name: Check Rust Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt
+        override: true
+
+    - name: Check Rust formatting
+      run: cargo fmt --all -- --check
+
+  rust-clippy:
+    name: Rust Clippy
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        pg-version: [13, 14, 15, 16, 17]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: clippy
+        override: true
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-clippy-pg${{ matrix.pg-version }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-clippy-pg${{ matrix.pg-version }}-
+          ${{ runner.os }}-cargo-clippy-
+
+    - name: Install PostgreSQL ${{ matrix.pg-version }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+        echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+
+    - name: Install pgrx
+      run: |
+        cargo install cargo-pgrx --version=0.14.3 --locked
+        cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+
+    - name: Run Clippy
+      run: cargo clippy --all-targets --all-features --features pg${{ matrix.pg-version }} -- -D warnings
+
+  rust-tests:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        pg-version: [13, 14, 15, 16, 17]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-test-pg${{ matrix.pg-version }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-test-pg${{ matrix.pg-version }}-
+          ${{ runner.os }}-cargo-test-
+
+    - name: Install PostgreSQL ${{ matrix.pg-version }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-${{ matrix.pg-version }} postgresql-server-dev-${{ matrix.pg-version }}
+        echo "/usr/lib/postgresql/${{ matrix.pg-version }}/bin" >> $GITHUB_PATH
+
+    - name: Install pgrx
+      run: |
+        cargo install cargo-pgrx --version=0.14.3 --locked
+        cargo pgrx init --pg${{ matrix.pg-version }} /usr/lib/postgresql/${{ matrix.pg-version }}/bin/pg_config
+
+    - name: Run Rust tests
+      run: cargo test --features pg${{ matrix.pg-version }}
+
+    - name: Build extension
+      run: cargo pgrx package --features pg${{ matrix.pg-version }}
