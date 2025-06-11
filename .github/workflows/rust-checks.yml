@@ -82,7 +82,7 @@ jobs:
           if [ ! -f ~/.cargo/bin/cargo-pgrx ]; then
             cargo install cargo-pgrx --version=0.14.3 --locked
           fi
-          cargo pgrx init --pg16
+          cargo pgrx init --pg16=download
 
       - name: Run Clippy
         run: cargo clippy --all-targets --features pg16 -- -D warnings
