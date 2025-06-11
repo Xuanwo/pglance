@@ -8,14 +8,25 @@ This script creates comprehensive integration tests that:
 2. Tests pglance extension functionality to read those tables
 3. Validates data integrity and type conversion between Lance and PostgreSQL
 
+This script is designed to run with the Docker environment and uses hardcoded
+connection parameters for the containerized PostgreSQL instance.
+
 Requirements:
-- pylance (pip install pylance)
-- pyarrow (pip install pyarrow)
-- psycopg2 (pip install psycopg2-binary)
-- PostgreSQL with pglance extension installed
+- Docker environment with pglance extension running (via run_tests.sh)
+- All Python dependencies are automatically managed via uv
 
 Usage:
+    # Recommended: Use the test runner
+    ./run_tests.sh
+    
+    # Manual execution (requires Docker environment to be running)
     python integration_test.py [--cleanup]
+
+Docker Environment:
+- PostgreSQL Host: localhost:5432
+- Database: postgres
+- User/Password: postgres/postgres
+- Data Mount: ./testdata -> /test_data_in_container
 """
 
 import os
@@ -164,12 +175,17 @@ class LanceTableGenerator:
 class PglanceIntegrationTest:
     """Integration tests for pglance extension functionality"""
 
-    def __init__(
-        self, db_params: Dict[str, Any], host_data_dir: str, pglance_data_prefix: str
-    ):
-        self.db_params = db_params
+    def __init__(self, host_data_dir: str = "./testdata"):
+        # Hardcoded Docker environment parameters
+        self.db_params = {
+            "host": "localhost",
+            "port": 5432,
+            "database": "postgres",
+            "user": "postgres",
+            "password": "postgres",
+        }
         self.host_data_dir = os.path.abspath(host_data_dir)
-        self.pglance_data_prefix = pglance_data_prefix
+        self.pglance_data_prefix = "/test_data_in_container"
         self.conn = None
 
     def connect(self):
@@ -410,33 +426,16 @@ def main():
     parser.add_argument(
         "--cleanup", action="store_true", help="Clean up test files after completion"
     )
-    parser.add_argument(
-        "--host-data-dir",
-        default="./testdata",
-        help="Directory on host to store Lance tables (default: ./testdata)",
-    )
-    parser.add_argument(
-        "--pglance-data-prefix",
-        default="/test_data_in_container",
-        help="Absolute path prefix for Lance tables inside the PostgreSQL/pglance environment (e.g., Docker container path)",
-    )
-    parser.add_argument("--db-host", default="localhost", help="PostgreSQL host")
-    parser.add_argument("--db-port", default="5432", help="PostgreSQL port")
-    parser.add_argument(
-        "--db-name", default="postgres", help="PostgreSQL database name"
-    )
-    parser.add_argument("--db-user", default="postgres", help="PostgreSQL username")
-    parser.add_argument("--db-password", default="postgres", help="PostgreSQL password")
 
     args = parser.parse_args()
 
     # Setup host data directory
-    host_data_dir = args.host_data_dir
+    host_data_dir = "./testdata"
     os.makedirs(host_data_dir, exist_ok=True)
 
     print(f"🚀 Starting pglance integration test")
     print(f"📁 Host data directory for Lance tables: {host_data_dir}")
-    print(f"🔩 pglance data prefix (container path): {args.pglance_data_prefix}")
+    print(f"🔩 pglance data prefix (container path): /test_data_in_container")
 
     try:
         # Step 1: Generate Lance tables
@@ -461,15 +460,7 @@ def main():
         print("🧪 Step 2: Running pglance integration tests")
         print(f"\n{'=' * 60}")
 
-        db_params = {
-            "host": args.db_host,
-            "port": args.db_port,
-            "database": args.db_name,
-            "user": args.db_user,
-            "password": args.db_password,
-        }
-
-        tester = PglanceIntegrationTest(db_params, args.host_data_dir, args.pglance_data_prefix)
+        tester = PglanceIntegrationTest(host_data_dir)
         tester.connect()
         tester.setup_extension()
 

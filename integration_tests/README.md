@@ -72,8 +72,8 @@ Comprehensive Python-based integration tests that:
 # With Docker (recommended)
 ./run_tests.sh
 
-# Manual execution (requires running PostgreSQL with pglance)
-python integration_test.py [--cleanup] [--host-data-dir ./testdata]
+# Manual execution (requires Docker environment to be running)
+python integration_test.py [--cleanup]
 ```
 
 ### Test Data Directory (`testdata/`)
@@ -117,16 +117,13 @@ The Docker setup automatically configures:
 - Password: `postgres`
 
 #### Manual Configuration
-For custom PostgreSQL instances:
+The integration test uses hardcoded Docker environment parameters:
+- Host: `localhost:5432`
+- Database: `postgres`
+- User/Password: `postgres/postgres`
+- Data path: `/test_data_in_container`
 
-```bash
-python integration_test.py \
-  --db-host your-host \
-  --db-port 5432 \
-  --db-name your-db \
-  --db-user your-user \
-  --db-password your-password
-```
+No manual configuration is needed when using the Docker environment.
 
 ### Container Testing
 
@@ -134,13 +131,7 @@ The Docker environment automatically handles path mapping:
 - Host path: `./testdata`
 - Container path: `/test_data_in_container`
 
-For custom container setups:
-
-```bash
-python integration_test.py \
-  --host-data-dir ./testdata \
-  --pglance-data-prefix /your-container-path
-```
+All paths and connection parameters are hardcoded for the Docker environment to ensure consistency and simplicity.
 
 ## Development
 

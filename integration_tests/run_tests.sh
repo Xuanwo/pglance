@@ -117,16 +117,7 @@ run_integration_tests() {
     fi
 
     echo "Starting integration test..."
-    TESTDATA_ABSOLUTE_PATH="$(realpath ./testdata)"
-    uv run python integration_test.py \
-        --host-data-dir ./testdata \
-        --pglance-data-prefix /test_data_in_container \
-        --db-host localhost \
-        --db-port 5432 \
-        --db-name postgres \
-        --db-user postgres \
-        --db-password postgres \
-        --cleanup
+    uv run python integration_test.py --cleanup
 
     echo "✅ Integration tests completed"
 }
