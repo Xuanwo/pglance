@@ -59,7 +59,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y build-essential protobuf-compiler libreadline-dev zlib1g-dev libssl-dev libicu-dev
 
       - name: Install and initialize pgrx
         run: |
@@ -120,7 +120,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y build-essential protobuf-compiler libreadline-dev zlib1g-dev libssl-dev libicu-dev
 
       - name: Install and initialize pgrx
         run: |
