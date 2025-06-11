@@ -37,11 +37,11 @@ build-release pg=pg_version:
 install pg=pg_version: (build pg)
     cargo pgrx install --features pg{{pg}}
 
-# Run integration tests
-e2e:
-    cd integration_tests && ./run_tests.sh
+# Run end-to-end integration tests (creates Lance datasets with Rust, tests with pglance)
+e2e pg=pg_version:
+    cargo pgrx test --no-default-features --features pg{{pg}}
 
-# Run clippy
+# Run clippy linter
 clippy pg=pg_version:
     cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
 
@@ -82,7 +82,6 @@ ci pg=pg_version:
     cargo fmt --all -- --check
     cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
     cargo test --no-default-features --features pg{{pg}}
-    @echo "🐍 Python checks..."
-    cd integration_tests && uv run ruff format --check .
-    cd integration_tests && uv run ruff check .
+    @echo "🧪 End-to-end integration tests..."
+    cargo pgrx test --no-default-features --features pg{{pg}}
     @echo "✅ All checks passed!"

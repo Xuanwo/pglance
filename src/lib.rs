@@ -274,7 +274,7 @@ fn hello_pglance() -> &'static str {
 
 /// Scan Lance table and return basic table information
 #[pg_extern]
-fn lance_table_info(
+pub fn lance_table_info(
     table_path: &str,
 ) -> TableIterator<
     'static,
@@ -303,7 +303,7 @@ fn lance_table_info(
 
 /// Get Lance table statistics
 #[pg_extern]
-fn lance_table_stats(
+pub fn lance_table_stats(
     table_path: &str,
 ) -> TableIterator<
     'static,
@@ -331,7 +331,7 @@ fn lance_table_stats(
 
 /// Scan Lance table and return data in JSONB format
 #[pg_extern]
-fn lance_scan_jsonb(
+pub fn lance_scan_jsonb(
     table_path: &str,
     limit: default!(Option<i64>, "NULL"),
 ) -> TableIterator<'static, (name!(row_data, pgrx::JsonB),)> {
@@ -373,10 +373,228 @@ fn lance_scan_jsonb(
 #[pg_schema]
 mod tests {
     use pgrx::prelude::*;
+    use std::sync::Arc;
+    use arrow::array::{Float32Array, Int32Array, StringArray, BooleanArray};
+    use arrow::datatypes::{DataType, Field, Schema};
+    use arrow::record_batch::RecordBatch;
+    use lance::Dataset;
+    use tempfile::TempDir;
+
+    /// Test data generator for Lance tables using synchronous blocking operations
+    struct LanceTestDataGenerator {
+        temp_dir: TempDir,
+    }
+
+    impl LanceTestDataGenerator {
+        fn new() -> Result<Self, Box<dyn std::error::Error>> {
+            let temp_dir = TempDir::new()?;
+            Ok(Self { temp_dir })
+        }
+
+        fn get_base_path(&self) -> &std::path::Path {
+            self.temp_dir.path()
+        }
+
+        /// Create a simple table with basic data types
+        fn create_simple_table(&self) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
+            let table_path = self.get_base_path().join("simple_table");
+
+            // Create sample data with various basic types
+            let id_array = Int32Array::from(vec![1, 2, 3, 4, 5]);
+            let name_array = StringArray::from(vec!["Alice", "Bob", "Charlie", "David", "Eve"]);
+            let age_array = Int32Array::from(vec![25, 30, 35, 40, 45]);
+            let salary_array = Float32Array::from(vec![50000.5, 65000.0, 80000.25, 95000.75, 120000.0]);
+            let is_active_array = BooleanArray::from(vec![true, true, false, true, false]);
+
+            let schema = Arc::new(Schema::new(vec![
+                Field::new("id", DataType::Int32, false),
+                Field::new("name", DataType::Utf8, false),
+                Field::new("age", DataType::Int32, false),
+                Field::new("salary", DataType::Float32, false),
+                Field::new("is_active", DataType::Boolean, false),
+            ]));
+
+            let batch = RecordBatch::try_new(
+                schema.clone(),
+                vec![
+                    Arc::new(id_array),
+                    Arc::new(name_array),
+                    Arc::new(age_array),
+                    Arc::new(salary_array),
+                    Arc::new(is_active_array),
+                ],
+            )?;
+
+            // Use RecordBatchIterator for lance
+            let reader = arrow::record_batch::RecordBatchIterator::new(
+                vec![Ok(batch)],
+                schema,
+            );
+            
+            // Use a new runtime for async operation
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                Dataset::write(reader, table_path.to_str().unwrap(), None).await
+            })?;
+            
+            Ok(table_path)
+        }
+
+        /// Create a table with vector embeddings
+        fn create_vector_table(&self) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
+            let table_path = self.get_base_path().join("vector_table");
+
+            let id_array = Int32Array::from(vec![1, 2, 3]);
+            let document_array = StringArray::from(vec!["doc1", "doc2", "doc3"]);
+
+            // Create vector embeddings as List array
+            let mut list_builder = arrow::array::ListBuilder::new(arrow::array::Float32Builder::new());
+            
+            // Add each embedding vector
+            for embedding in [
+                vec![0.1, 0.2, 0.3, 0.4],
+                vec![0.5, 0.6, 0.7, 0.8],
+                vec![0.9, 1.0, 1.1, 1.2],
+            ] {
+                for value in embedding {
+                    list_builder.values().append_value(value);
+                }
+                list_builder.append(true);
+            }
+            let list_array = list_builder.finish();
+
+            let schema = Arc::new(Schema::new(vec![
+                Field::new("id", DataType::Int32, false),
+                Field::new("document", DataType::Utf8, false),
+                Field::new("embedding", DataType::List(Arc::new(Field::new("item", DataType::Float32, true))), false),
+            ]));
+
+            let batch = RecordBatch::try_new(
+                schema.clone(),
+                vec![
+                    Arc::new(id_array),
+                    Arc::new(document_array),
+                    Arc::new(list_array),
+                ],
+            )?;
+
+            let reader = arrow::record_batch::RecordBatchIterator::new(
+                vec![Ok(batch)],
+                schema,
+            );
+            
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                Dataset::write(reader, table_path.to_str().unwrap(), None).await
+            })?;
+            
+            Ok(table_path)
+        }
+    }
 
     #[pg_test]
     fn test_hello_pglance() {
         assert_eq!("Hello, pglance", crate::hello_pglance());
+    }
+
+    #[pg_test]
+    fn test_error_handling() {
+        // Test with invalid path
+        let result = std::panic::catch_unwind(|| {
+            let _: Vec<(String, String, bool)> = crate::lance_table_info("/invalid/path/does/not/exist")
+                .collect::<Vec<_>>();
+        });
+        assert!(result.is_err());
+    }
+
+    #[pg_test]
+    fn test_simple_table_integration() {
+        let generator = LanceTestDataGenerator::new().expect("Failed to create test data generator");
+        let table_path = generator.create_simple_table().expect("Failed to create simple table");
+        let table_path_str = table_path.to_str().unwrap();
+
+        // Test table info
+        let table_info: Vec<(String, String, bool)> = crate::lance_table_info(table_path_str)
+            .collect::<Vec<_>>();
+        
+        assert_eq!(table_info.len(), 5);
+        
+        // Check specific columns
+        let id_column = table_info.iter().find(|(name, _, _)| name == "id").unwrap();
+        assert_eq!(id_column.1, "int4");
+        assert!(!id_column.2); // not nullable
+        
+        let name_column = table_info.iter().find(|(name, _, _)| name == "name").unwrap();
+        assert_eq!(name_column.1, "text");
+        
+        let salary_column = table_info.iter().find(|(name, _, _)| name == "salary").unwrap();
+        assert_eq!(salary_column.1, "float4");
+
+        // Test table stats
+        let stats: Vec<(i64, i64, i32)> = crate::lance_table_stats(table_path_str)
+            .collect::<Vec<_>>();
+        
+        assert_eq!(stats.len(), 1);
+        let (version, num_rows, num_columns) = stats[0];
+        assert!(version >= 1);
+        assert_eq!(num_rows, 5);
+        assert_eq!(num_columns, 5);
+
+        // Test data scanning
+        let data: Vec<(pgrx::JsonB,)> = crate::lance_scan_jsonb(table_path_str, Some(3))
+            .collect::<Vec<_>>();
+        
+        assert_eq!(data.len(), 3);
+        
+        // Verify first row data
+        let first_row = &data[0].0;
+        let json_value = &first_row.0;
+        assert_eq!(json_value["id"], 1);
+        assert_eq!(json_value["name"], "Alice");
+        assert_eq!(json_value["age"], 25);
+        // Use approximate comparison for floating point
+        let salary = json_value["salary"].as_f64().unwrap();
+        assert!((salary - 50000.5).abs() < 0.1);
+        assert_eq!(json_value["is_active"], true);
+    }
+
+    #[pg_test]
+    fn test_vector_table_integration() {
+        let generator = LanceTestDataGenerator::new().expect("Failed to create test data generator");
+        let table_path = generator.create_vector_table().expect("Failed to create vector table");
+        let table_path_str = table_path.to_str().unwrap();
+
+        // Test table info
+        let table_info: Vec<(String, String, bool)> = crate::lance_table_info(table_path_str)
+            .collect::<Vec<_>>();
+        
+        assert_eq!(table_info.len(), 3);
+        
+        // Check embedding column (should be a list type)
+        let embedding_column = table_info.iter().find(|(name, _, _)| name == "embedding").unwrap();
+        assert!(embedding_column.1.contains("json")); // Lists are converted to JSON in PostgreSQL
+
+        // Test data scanning with limit
+        let data: Vec<(pgrx::JsonB,)> = crate::lance_scan_jsonb(table_path_str, Some(2))
+            .collect::<Vec<_>>();
+        
+        assert_eq!(data.len(), 2);
+        
+        // Verify first row has vector data
+        let first_row = &data[0].0;
+        let json_value = &first_row.0;
+        assert_eq!(json_value["id"], 1);
+        assert_eq!(json_value["document"], "doc1");
+        
+        // Check that embedding is an array
+        assert!(json_value["embedding"].is_array());
+        let embedding = json_value["embedding"].as_array().unwrap();
+        assert_eq!(embedding.len(), 4);
+        // Use approximate comparison for floating point values
+        let val0 = embedding[0].as_f64().unwrap();
+        let val1 = embedding[1].as_f64().unwrap();
+        assert!((val0 - 0.1).abs() < 0.01);
+        assert!((val1 - 0.2).abs() < 0.01);
     }
 }
 
