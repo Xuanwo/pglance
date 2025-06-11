@@ -18,10 +18,8 @@ check pg=pg_version:
 # Auto-format all code
 fmt:
     cargo fmt --all
-    cd integration_tests && uv run ruff format .
-    cd integration_tests && uv run ruff check . --fix
 
-# Run Rust tests
+# Run all tests (unit + integration)
 test pg=pg_version:
     cargo test --no-default-features --features pg{{pg}}
 
@@ -37,9 +35,7 @@ build-release pg=pg_version:
 install pg=pg_version: (build pg)
     cargo pgrx install --features pg{{pg}}
 
-# Run end-to-end integration tests (creates Lance datasets with Rust, tests with pglance)
-e2e pg=pg_version:
-    cargo pgrx test --no-default-features --features pg{{pg}}
+
 
 # Run clippy linter
 clippy pg=pg_version:
@@ -68,20 +64,15 @@ audit:
 # Check for outdated dependencies
 deps:
     cargo outdated
-    cd integration_tests && uv tree
 
 # Quick fix for common issues
 fix:
     cargo fmt --all
-    cd integration_tests && uv run ruff format .
-    cd integration_tests && uv run ruff check . --fix
 
 # Simulate CI locally
+# Run all quality checks (format + lint + test)
 ci pg=pg_version:
-    @echo "🦀 Rust checks..."
     cargo fmt --all -- --check
     cargo clippy --no-default-features --features pg{{pg}} -- -D warnings
     cargo test --no-default-features --features pg{{pg}}
-    @echo "🧪 End-to-end integration tests..."
-    cargo pgrx test --no-default-features --features pg{{pg}}
     @echo "✅ All checks passed!"

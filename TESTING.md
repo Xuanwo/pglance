@@ -4,7 +4,7 @@ This document describes the testing approach for pglance, a PostgreSQL extension
 
 ## Overview
 
-pglance uses a **pure Rust testing approach** that eliminates the need for Docker or external dependencies. All tests are written in Rust and executed using the pgrx testing framework.
+pglance uses a **pure Rust testing approach** that eliminates the need for Docker or external dependencies. All tests (unit and integration) are written in Rust and executed using the pgrx testing framework with a single command.
 
 ## Test Structure
 
@@ -14,7 +14,7 @@ Basic functionality tests located in `src/lib.rs`:
 - `test_error_handling()` - Tests error handling with invalid paths
 
 ### 2. Integration Tests
-Comprehensive end-to-end tests that:
+Comprehensive tests that:
 1. **Create Lance datasets** using the Rust Lance library with various data types
 2. **Test pglance functions** against these datasets through PostgreSQL
 3. **Validate results** including schema detection, data retrieval, and type conversion
@@ -25,17 +25,12 @@ Integration tests include:
 
 ## Running Tests
 
-### Quick Test
+### All Tests (Unit + Integration)
 ```bash
 just test
 ```
 
-### End-to-End Integration Tests
-```bash
-just e2e
-```
-
-### All Quality Checks
+### All Quality Checks (Format + Lint + Test)
 ```bash
 just ci
 ```
@@ -63,6 +58,7 @@ All test data is created in temporary directories and automatically cleaned up a
 ✅ **No Docker Required** - Tests run directly with `cargo pgrx test`
 ✅ **Fast Execution** - No container startup overhead
 ✅ **Simple Setup** - Only requires Rust and pgrx installation
+✅ **Unified Testing** - Unit and integration tests in one command
 ✅ **Comprehensive Coverage** - Tests the complete data pipeline from creation to retrieval
 ✅ **Easy Debugging** - Standard Rust debugging tools work seamlessly
 ✅ **CI/CD Friendly** - Runs in any environment with Rust support
@@ -74,15 +70,14 @@ The original testing approach used:
 - Docker containers for PostgreSQL + pglance
 - Complex shell scripts for orchestration
 
-This has been **completely replaced** by the pure Rust approach, eliminating external dependencies and simplifying the development workflow.
+This has been **completely replaced** by the pure Rust approach, eliminating external dependencies and providing a unified testing experience.
 
 ## Commands Summary
 
 | Command | Description |
 |---------|-------------|
-| `just test` | Run unit tests |
-| `just e2e` | Run integration tests |
-| `just ci` | Run all quality checks |
+| `just test` | Run all tests (unit + integration) |
+| `just ci` | Run all quality checks (format + lint + test) |
 | `just run` | Start PostgreSQL with pglance for manual testing |
 | `just check` | Format + lint + test |
 
