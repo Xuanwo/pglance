@@ -143,6 +143,3 @@ jobs:
 
       - name: Run Rust tests
         run: cargo test --features pg16
-
-      - name: Build extension
-        run: cargo pgrx package --features pg16
